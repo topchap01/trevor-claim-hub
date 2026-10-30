@@ -11,6 +11,20 @@ Short records of the choices that shape the code, and what would change them.
 - *Cost:* an integration user and a second deployment.
 - *Revisit if* Trevor wants claimants to have accounts across campaigns.
 
+**1a. Salesforce stays, for now, with a cheap way out.**
+- Salesforce carries more than claims:
+  - the claim history;
+  - the weekly client reports;
+  - the Electrolux C4C flow;
+  - the payments process and staff screens.
+- Replacing it while the claim experience is also being replaced would double the risk.
+- The web app talks only to the `/claimhub/v1` API, and the rules are covered by tests, so the back end behind that API can be replaced later without touching the claim pages.
+- *Revisit when:*
+  1. staff work mainly in the hub console;
+  2. client reports come from a reporting tool;
+  3. Electrolux takes C4C data by API;
+  4. licence and storage cost clearly exceed a hosted Postgres plus reporting.
+
 **2. Vercel for the web app.**
 - *Why:*
   - Next.js hosting with no servers to run.
@@ -35,7 +49,16 @@ Short records of the choices that shape the code, and what would change them.
 - So a 10 to 20 second invoice read does not threaten throughput, and the claimant sees the result immediately.
 - *Revisit if* the per-transaction callout limit or timeouts become a problem. The read could then move to a Queueable, with the page polling.
 
-**6. Invoice files in private Vercel Blob storage.** Production Salesforce file storage is over its limit. Staff open files through short-lived tickets issued by Salesforce.
+**6. Invoice files outside Salesforce: Vercel Blob in the sandbox, Amazon S3 (Sydney) for production.**
+- Production Salesforce file storage is over its limit, so invoices never go there.
+- Staff open files through short-lived tickets issued by Salesforce; Salesforce stores only the file key.
+- S3 for production because:
+  - files stay in the Sydney region;
+  - a lifecycle rule handles retention with no code;
+  - access logging and Object Lock are available;
+  - the files are independent of the web host.
+- Vercel Blob's Hobby plan also caps storage at 1 GB and blocks access when that is exceeded.
+- All file handling is in `web/lib/files.js`, so the switch is one adapter plus environment variables. Access goes through Vercel's AWS sign-in (OIDC), so no long-lived AWS keys are stored.
 
 **7. Flag, don't refuse, where a person should judge.** Shared bank accounts, the same invoice twice and several claims from one connection all have innocent explanations (households, shared office networks), so they go to the review queue. Certain cases are refused outright:
 - a duplicate email on the same promotion;
@@ -53,6 +76,7 @@ Short records of the choices that shape the code, and what would change them.
 - Move email templates out of Apex into Salesforce email templates or custom metadata, so staff can edit wording.
 - Instant-win and prize-draw mechanics: designed but not built (winning moments drawn and sealed in advance, awarded under a row lock).
 - k6 load test script.
-- Automated invoice file retention.
+- Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
+- Automated invoice file retention (an S3 lifecycle rule once on S3).
 - A nightly reconcile job: Blob files no receipt points to (left behind when Salesforce timed out), and receipts whose file is missing.
 - Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs.

@@ -8,7 +8,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] **PNC compulsory on Electrolux campaigns?** C4C only receives product details when a PNC is present.
 - [ ] **Collect address, gender and age?** The old forms did, and some weekly reports (*Valids by State*, *Gender Split*, *Age Report*) use them.
 - [ ] **Consent wording** for Electrolux marketing opt-in, if wanted.
-- [ ] **Invoice retention period**, and who may open invoice files.
+- [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files.
+- [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
 - [ ] **Vercel plan.** A Pro team is needed for the WAF rate limit, a custom domain on the production project, longer log retention and a DPA.
 - [ ] **Production hub domain**, for example `claims.trevor.services`.
 
