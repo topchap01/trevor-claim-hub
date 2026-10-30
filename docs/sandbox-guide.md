@@ -20,7 +20,7 @@ The web app runs at `https://trevor-claim-hub-test.vercel.app` and is protected 
 |---|---|---|
 | ENT-261030-211710 | Approved | The full journey: invoice read automatically, serial scanned from a photo, a T2 serial refused and flagged, then approved. |
 | ENT-261030-211711 | Paid | Smoke-test claim. Flagged because its bank account is on another claim. |
-| ENT-261030-211714 | Complete, with the team | Lodged through the live site on 30 Oct. The invoice passed every automatic check. The file is in private Blob storage, not Salesforce. Try *View invoice*. |
+| ENT-261030-211714 | Awaiting (serials still to add) | Lodged through the live site on 30 Oct. The invoice passed every automatic check. The file is in private Blob storage, not Salesforce. Try *View invoice*. |
 | ENT-261030-211700 | Payment failed | Open its claim page to see the claimant's "update bank details" path. |
 | ENT-261030-211701 | Not approved | Shows the rejection reason and email. |
 | ENT-261030-211708 / 211709 | Awaiting | Duplicate-serial and excluded-serial flags in the console's *Needs a person* list. |
