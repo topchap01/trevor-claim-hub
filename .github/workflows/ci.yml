@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    name: Web (lint, unit tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  salesforce-static:
+    name: Salesforce (Code Analyzer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global @salesforce/cli
+      - run: sf plugins install code-analyzer
+      - name: Code Analyzer (fails on high severity or worse)
+        working-directory: salesforce
+        run: sf code-analyzer run --workspace force-app --rule-selector Recommended --config-file code-analyzer.yml --severity-threshold 2 --output-file analyzer.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-analyzer
+          path: salesforce/analyzer.html
+
+  salesforce-validate:
+    name: Salesforce (validate deploy and run tests in the sandbox)
+    # Needs repository secrets:
+    #   SF_SANDBOX_USERNAME   a deploy user in the sandbox
+    #   SF_SANDBOX_CLIENT_ID  consumer key of a CI connected app with JWT bearer enabled
+    #   SF_SANDBOX_JWT_KEY    that app's private key (PEM)
+    if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global @salesforce/cli
+      - name: Sign in to the sandbox
+        env:
+          SF_SANDBOX_JWT_KEY: ${{ secrets.SF_SANDBOX_JWT_KEY }}
+        run: |
+          if [ -z "$SF_SANDBOX_JWT_KEY" ]; then echo "Sandbox secrets not set; skipping"; exit 0; fi
+          echo "$SF_SANDBOX_JWT_KEY" > server.key
+          sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
+            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci
+          rm server.key
+      - name: Validate deploy with the hub tests
+        if: ${{ env.SKIP != 'true' }}
+        working-directory: salesforce
+        run: |
+          sf org display -o ci >/dev/null 2>&1 || { echo "Not signed in; skipping"; exit 0; }
+          TESTS=$(ls force-app/main/default/classes/*Test.cls | xargs -n1 basename | sed 's/\.cls$//' | paste -sd, -)
+          sf project deploy validate -o ci -d force-app --test-level RunSpecifiedTests --tests ${TESTS//,/ --tests } --coverage-formatters text --wait 30
