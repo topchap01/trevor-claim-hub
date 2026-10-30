@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Claims_Per_IP_Daily__c</fullName>
+    <description>Refuse new claims from one connection above this. Default 20. Three or more are flagged for review.</description>
+    <label>Claims per connection per day</label>
+    <precision>6</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

@@ -1,0 +1,102 @@
+<template>
+    <div class="console">
+        <div class="bar slds-grid slds-grid_vertical-align-end slds-wrap">
+            <div class="slds-col pickr"><lightning-combobox label="Campaign" value={campaignId} options={options} onchange={pick}></lightning-combobox></div>
+            <div class="slds-col slds-grow-none"><lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh" onclick={refresh}></lightning-button-icon></div>
+            <div class="slds-col slds-text-align_right"><lightning-button variant="brand" label="New campaign from terms" icon-name="utility:add" onclick={newFromTerms}></lightning-button></div>
+        </div>
+        <template lwc:if={error}><div class="slds-notify slds-notify_alert slds-alert_error slds-m-top_small" role="alert">{error}</div></template>
+        <template lwc:if={noCampaigns}><p class="slds-m-top_medium">No claim hub campaigns yet. Start with "New campaign from terms".</p></template>
+        <template lwc:if={busy}><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></template>
+
+        <template lwc:if={hasCampaign}>
+            <div class="head">
+                <div>
+                    <h1>{s.name}</h1>
+                    <p><span class={stateClass}>{s.state}</span>
+                        <template lwc:if={s.liveUrl}> · <a href={s.liveUrl} target="_blank">{s.liveUrl}</a></template>
+                        · emails from {s.sender}</p>
+                </div>
+                <lightning-button label="Open campaign record" onclick={openCampaign}></lightning-button>
+            </div>
+
+            <div class="tiles">
+                <template for:each={s.counts} for:item="t">
+                    <div class="tile" key={t.label}><div class="n">{t.count}</div><div class="l">{t.label}</div><div class="v">{t.value}</div><div class="h">{t.hint}</div></div>
+                </template>
+            </div>
+
+            <div class="slds-grid slds-wrap slds-gutters">
+                <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3">
+                    <section class="panel">
+                        <h2>Ready to approve ({readyCount})</h2>
+                        <p class="sub">Complete claims, oldest first. Approving emails the claimant.</p>
+                        <template lwc:if={readyCount}>
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                <thead><tr><th>Claim</th><th>Claimant</th><th>Spend</th><th>Cashback</th><th>Invoice</th><th>Complete since</th><th></th></tr></thead>
+                                <tbody>
+                                    <template for:each={readyRows} for:item="r">
+                                        <tr key={r.id}>
+                                            <td><a href="#" data-id={r.id} onclick={openClaim}>{r.claim}</a></td><td>{r.who}</td><td>{r.spend}</td><td>{r.cashback}</td>
+                                            <td><span class={r.invCls}>{r.invoice}</span> <lightning-button-icon icon-name="utility:preview" variant="bare" data-id={r.id} onclick={viewInvoice} alternative-text="View invoice" title="View invoice"></lightning-button-icon></td><td>{r.waiting}</td>
+                                            <td class="acts">
+                                                <template lwc:if={r.isRejecting}>
+                                                    <lightning-combobox variant="label-hidden" placeholder="Reason" options={reasonOptions} onchange={pickReason}></lightning-combobox>
+                                                    <lightning-button label="Not approved" variant="destructive" onclick={doReject}></lightning-button>
+                                                    <lightning-button label="Cancel" onclick={cancelReject}></lightning-button>
+                                                </template>
+                                                <template lwc:else>
+                                                    <lightning-button label="Approve" variant="brand" data-id={r.id} onclick={doApprove}></lightning-button>
+                                                    <lightning-button label="Not approved" data-id={r.id} onclick={startReject}></lightning-button>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </template>
+                        <template lwc:else><p class="empty">Nothing waiting.</p></template>
+                    </section>
+
+                    <section class="panel">
+                        <h2>Needs a person ({queueCount})</h2>
+                        <p class="sub">Raised automatically: invoice checks, duplicate or excluded serials, and chat handovers.</p>
+                        <template lwc:if={queueCount}>
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                <thead><tr><th>Claim</th><th>Claimant</th><th>What</th><th>Detail</th><th>When</th></tr></thead>
+                                <tbody>
+                                    <template for:each={s.queue} for:item="q">
+                                        <tr key={q.key}><td><a href="#" data-id={q.id} onclick={openClaim}>{q.claim}</a></td><td>{q.who}</td><td>{q.what}</td><td class="slds-cell-wrap">{q.detail}</td><td>{q.when}</td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </template>
+                        <template lwc:else><p class="empty">Nothing raised.</p></template>
+                    </section>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3">
+                    <section class="panel">
+                        <h2>Key dates</h2>
+                        <p class="sub">{s.timezone}</p>
+                        <dl>
+                            <template for:each={s.dates} for:item="d"><div class="dl" key={d.label}><dt>{d.label}</dt><dd>{d.value}</dd></div></template>
+                        </dl>
+                    </section>
+                    <section class="panel">
+                        <h2>Rules the hub enforces</h2>
+                        <div class="chips"><template for:each={s.rules} for:item="r"><span class="chip" key={r}>{r}</span></template></div>
+                    </section>
+                    <section class="panel">
+                        <h2>Emails</h2>
+                        <p>{s.outbox.Sent} sent · {s.outbox.Queued} waiting · {s.outbox.Failed} failed</p>
+                    </section>
+                    <section class="panel">
+                        <h2>Problems found in the terms ({issueCount})</h2>
+                        <template for:each={s.issues} for:item="i"><div key={i.key} class={i.cls}><span class="sev">{i.sev}</span> {i.text}</div></template>
+                    </section>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

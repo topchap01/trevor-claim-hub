@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Hub_Bank_Deadline__c</fullName>
+    <label>Claim Hub Bank Details Deadline</label>
+    <required>false</required>
+    <type>DateTime</type>
+</CustomField>

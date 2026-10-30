@@ -1,0 +1,36 @@
+.console { background: #fff; padding: 16px; border-radius: 8px; position: relative; min-height: 200px; }
+.pickr { max-width: 520px; }
+.bar .slds-col { padding-right: 8px; }
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 18px 0 12px; }
+.head h1 { font-size: 22px; font-weight: 700; }
+.head p { color: #5b6470; margin-top: 4px; }
+.state { font-weight: 700; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+.state.open { background: #e5f4ec; color: #1f7a4d; }
+.state.shut { background: #f3f3f3; color: #5b6470; }
+.tiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px; }
+.tile { border: 1px solid #e1e4ea; border-radius: 8px; padding: 10px 12px; }
+.tile .n { font-size: 26px; font-weight: 800; line-height: 1.1; }
+.tile .l { font-weight: 600; }
+.tile .v { color: #5b6470; font-size: 12px; }
+.tile .h { color: #8a929c; font-size: 11px; margin-top: 4px; }
+.panel { border: 1px solid #e1e4ea; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+.panel h2 { font-size: 15px; font-weight: 700; }
+.sub { color: #5b6470; font-size: 12px; margin-bottom: 8px; }
+.empty { color: #8a929c; }
+.acts { white-space: nowrap; }
+.acts lightning-combobox { display: inline-block; width: 190px; vertical-align: middle; margin-right: 4px; }
+.acts lightning-button { margin-left: 4px; }
+.pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.pill.ok { background: #e5f4ec; color: #1f7a4d; }
+.pill.warn { background: #fff4dc; color: #9a6200; }
+.dl { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid #f0f1f4; }
+.dl:first-child { border-top: 0; }
+dt { color: #5b6470; }
+dd { font-weight: 600; text-align: right; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { background: #f3f4f7; border-radius: 12px; padding: 3px 10px; font-size: 12px; }
+.issue { border-left: 4px solid #c9c9c9; padding: 6px 10px; margin-top: 6px; background: #fafafa; font-size: 12px; }
+.issue.high { border-color: #ba0517; background: #fef1f1; }
+.issue.medium { border-color: #dd7a01; background: #fef6ec; }
+.sev { font-size: 10px; font-weight: 700; letter-spacing: .05em; }
+@media (max-width: 1100px) { .tiles { grid-template-columns: repeat(3, 1fr); } }

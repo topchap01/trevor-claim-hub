@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses><apexClass>ClaimHubApi</apexClass><enabled>true</enabled></classAccesses>
+    <description>Lets the claim hub web app's integration user call the claim hub API. Nothing else. If a campaign keeps its own record types (to also run on the old claim forms), add them here.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Claim Hub Integration</label>
+    <recordTypeVisibilities><recordType>Entry__c.Claim_Hub</recordType><visible>true</visible></recordTypeVisibilities>
+    <recordTypeVisibilities><recordType>Entry_Product__c.Claim_Hub_Entry_Product</recordType><visible>true</visible></recordTypeVisibilities>
+    <recordTypeVisibilities><recordType>Entry_Receipt__c.Claim_Hub_Entry_Receipt</recordType><visible>true</visible></recordTypeVisibilities>
+    <userPermissions><enabled>true</enabled><name>ApiEnabled</name></userPermissions>
+</PermissionSet>

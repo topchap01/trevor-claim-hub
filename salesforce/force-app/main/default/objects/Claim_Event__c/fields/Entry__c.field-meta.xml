@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Entry__c</fullName>
+    <label>Claim</label>
+    <referenceTo>Entry__c</referenceTo>
+    <relationshipName>Claim_Events</relationshipName>
+    <relationshipLabel>Claims</relationshipLabel>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <type>Lookup</type>
+    <required>false</required>
+</CustomField>

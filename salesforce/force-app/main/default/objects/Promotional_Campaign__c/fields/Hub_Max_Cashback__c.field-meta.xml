@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Hub_Max_Cashback__c</fullName>
+    <inlineHelpText>Cap on any one claim's cashback. Blank means no cap.</inlineHelpText>
+    <label>Claim Hub Maximum Cashback</label>
+    <precision>12</precision>
+    <scale>2</scale>
+    <type>Currency</type>
+</CustomField>

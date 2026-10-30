@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppGlobalOauthSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <callbackUrl>https://trevor-claim-hub-test.vercel.app/oauth/callback</callbackUrl>
+    <certificate>-----BEGIN CERTIFICATE-----
+MIIDITCCAgmgAwIBAgIUX/juFIp3Y/wjX6zgk8ccpIghFcQwDQYJKoZIhvcNAQEL
+BQAwIDEeMBwGA1UEAwwVdHJldm9yLWNsYWltLWh1Yi10ZXN0MB4XDTI2MTAzMDA4
+MzQwN1oXDTI4MTAyOTA4MzQwN1owIDEeMBwGA1UEAwwVdHJldm9yLWNsYWltLWh1
+Yi10ZXN0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAywkcFpTYtvKm
+zKIKDZaO5uzMb+vDhi1rQaUtmfn8FQvhTCDC2mSDyTSjGMXZH8V0a6c8lGDYtvjp
+gShkyHkhILEN3BuLp1I4StWT0xc+8C/PhGBQzz16ppuXrLdpoGdlZlF/wG2LCtdN
+LLl+77EgwGqIvbiHMFNxeRWPgxiG43goMYCHiW8JHNbQDGU6fahyup9DOFSxB9ph
+j1hOYa64jCcrJeq1MzOp7wGjKLHtivFkOHq1zefCs2C7mdYhXUz6iRfkdcy2qIzt
+DxAeA/I2Yr5VkxsZLdDQW9KWYqFbt/gK7CZqQjkX8oPq/5BT2CmYrXUsLDAo+mdw
+i2fc6aFApQIDAQABo1MwUTAdBgNVHQ4EFgQUxvK+j1kRsDRSJAYYZ0OaQgud1Oow
+HwYDVR0jBBgwFoAUxvK+j1kRsDRSJAYYZ0OaQgud1OowDwYDVR0TAQH/BAUwAwEB
+/zANBgkqhkiG9w0BAQsFAAOCAQEAg9cF0xBnWgY0kZf6QLxL7srXszwOAW0xbFVN
+ePA7k2NAT3VQaQZBS0dSiDoFxHX0zwk0HCvUOmU1u7mGkSsz+23l8ApdfESnsYah
+rM+Kd+IYocc+msHACYBhtWK7D8UuIYsFmzUYWgpRdlHlAGJeHrbc/RSpjTG235Zv
+DbKwqfyOCBeYc+TKPzDJnpDMHYGUKOKYPHBeMDiAbd+WpmLetYuUMV30f65PNFjD
+De6x+uSRs12a3x33vOsztDebm2FRviBTpBxLkNUdpzGSPaQiNpx4eEeJcLDVr6Hb
+tKqpqqU6fqTKzGP3oeQlahB3BCqFIIhLKdA0G0yRn5p0QpSV/w==
+-----END CERTIFICATE-----</certificate>
+    <externalClientApplication>Trevor_Claim_Hub_Test</externalClientApplication>
+    <isConsumerSecretOptional>true</isConsumerSecretOptional>
+    <isIntrospectAllTokens>false</isIntrospectAllTokens>
+    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
+    <isPkceRequired>false</isPkceRequired>
+    <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
+    <label>Trevor_Claim_Hub_Test_glbloauth</label>
+</ExtlClntAppGlobalOauthSettings>

@@ -1,0 +1,11 @@
+# Salesforce Code Analyzer (v5) settings for this project.
+# Run: sf code-analyzer run --workspace force-app --rule-selector Recommended
+# House style allows one-line if/for bodies without braces and several declarations per line, so those
+# style rules are taken out of the Recommended set. Everything else runs as shipped.
+rules:
+  pmd:
+    IfStmtsMustUseBraces: { tags: [] }
+    IfElseStmtsMustUseBraces: { tags: [] }
+    ForLoopsMustUseBraces: { tags: [] }
+    OneDeclarationPerLine: { tags: [] }
+    FieldDeclarationsShouldBeAtStart: { tags: [] }

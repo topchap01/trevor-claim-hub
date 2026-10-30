@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Access_Token__c</fullName>
+    <caseSensitive>true</caseSensitive>
+    <description>Random, unguessable code used in the claimant's resume and status links. Replaces the old base64(record Id) token. Never derived from the record Id.</description>
+    <externalId>true</externalId>
+    <label>Access Token</label>
+    <length>64</length>
+    <required>false</required>
+    <unique>true</unique>
+    <type>Text</type>
+</CustomField>

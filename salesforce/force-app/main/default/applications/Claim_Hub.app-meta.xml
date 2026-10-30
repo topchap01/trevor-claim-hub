@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand><headerColor>#1A1A1A</headerColor><shouldOverrideOrgTheme>false</shouldOverrideOrgTheme></brand>
+    <description>Claim hub: build campaigns from terms, run claims, approve and pay.</description>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <label>Claim Hub</label>
+    <navType>Standard</navType>
+    <tabs>Hub_Console</tabs>
+    <tabs>Hub_Campaign_Builder</tabs>
+    <tabs>Promotional_Campaign__c</tabs>
+    <tabs>Entry__c</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>

@@ -1,0 +1,17 @@
+# secrets: never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+!**/certificates/*.crt
+# build output and dependencies
+node_modules/
+web/.next/
+.sf/
+.sfdx/
+salesforce/.sf/
+salesforce/.sfdx/
+coverage/
+*.log
+.DS_Store

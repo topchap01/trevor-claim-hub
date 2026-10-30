@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>Claim hub operating settings. Every field has a safe default in code (ClaimHubSettings), so an empty setting still works.</description>
+    <enableFeeds>false</enableFeeds>
+    <label>Claim Hub Settings</label>
+    <visibility>Public</visibility>
+</CustomObject>

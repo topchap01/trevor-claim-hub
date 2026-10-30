@@ -1,0 +1,57 @@
+<template>
+    <lightning-card title="New campaign from terms and conditions" icon-name="standard:contract">
+        <div class="slds-p-horizontal_medium">
+            <p class="slds-m-bottom_small">Paste the draft terms or attach the PDF. Claude reads them, sets out the campaign and lists anything in the terms that needs fixing. Nothing is created until you press Create.</p>
+            <lightning-textarea label="Terms and conditions" value={terms} onchange={onTerms} class="terms"></lightning-textarea>
+            <div class="slds-grid slds-gutters slds-m-top_x-small slds-grid_vertical-align-end">
+                <div class="slds-col"><lightning-input type="file" label="Or attach a PDF" accept=".pdf" onchange={onFile}></lightning-input><template lwc:if={pdfName}><span class="slds-text-color_weak">{pdfName}</span></template></div>
+                <div class="slds-col slds-text-align_right"><lightning-button variant="brand" label="Read terms" onclick={read} disabled={cannotRead}></lightning-button></div>
+            </div>
+            <template lwc:if={busy}><div class="slds-m-vertical_medium slds-is-relative" style="min-height:60px"><lightning-spinner alternative-text="Working" size="small"></lightning-spinner><p class="slds-text-align_center slds-p-top_xx-large">{busyText}</p></div></template>
+            <template lwc:if={error}><div class="slds-notify slds-notify_alert slds-alert_error slds-m-top_small" role="alert">{error}</div></template>
+
+            <template lwc:if={hasSpec}>
+                <div class="slds-grid slds-wrap slds-gutters slds-m-top_medium">
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                        <h3 class="slds-text-heading_small slds-m-bottom_x-small">What the terms say</h3>
+                        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                            <tbody>
+                                <template for:each={facts} for:item="f"><tr key={f.key}><th class="lbl">{f.label}</th><td class="slds-cell-wrap">{f.value}</td></tr></template>
+                            </tbody>
+                        </table>
+                        <details class="slds-m-top_small"><summary>Participating models ({products.length})</summary>
+                            <ul class="models"><template for:each={products} for:item="p"><li key={p.key}><b>{p.model}</b> {p.group}</li></template></ul>
+                        </details>
+                    </div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                        <h3 class="slds-text-heading_small slds-m-bottom_x-small">Problems found in the terms ({issueCount})</h3>
+                        <template for:each={issues} for:item="i"><div key={i.key} class={i.cls}><span class="sev">{i.sev}</span> <b>{i.clause}</b>: {i.issue}</div></template>
+                    </div>
+                </div>
+
+                <template lwc:if={unsupported}><div class="slds-notify slds-notify_alert slds-alert_warning slds-m-top_medium" role="alert">The hub can't run this cashback mechanic yet: {spec.mechanicNote}</div></template>
+                <h3 class="slds-text-heading_small slds-m-top_large slds-m-bottom_x-small">Set it up</h3>
+                <div class="slds-grid slds-wrap slds-gutters">
+                    <div class="slds-col slds-size_1-of-2 slds-large-size_1-of-4"><lightning-input type="date" label="Purchases from" data-k="start" value={opts.start} onchange={onOpt}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2 slds-large-size_1-of-4"><lightning-input type="date" label="Purchases to" data-k="end" value={opts.end} onchange={onOpt}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2"><lightning-combobox label="Check the product list against a past campaign (optional)" data-k="compareCampaignId" value={opts.compareCampaignId} options={templateOptions} onchange={onOpt} field-level-help="Flags models set up on that campaign but missing from these terms, and the other way round."></lightning-combobox></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2"><lightning-input label="Campaign name" data-k="name" value={opts.name} onchange={onOpt}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-4"><lightning-input label="Web address name" data-k="slug" value={opts.slug} onchange={onOpt} field-level-help="Lower-case letters, numbers and dashes. The claim page is at the hub address / this name."></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-4"><lightning-input label="Brand colour" data-k="brandColor" value={opts.brandColor} onchange={onOpt}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2"><lightning-input label="Send emails from" data-k="sender" value={opts.sender} onchange={onOpt} field-level-help="Must be an organisation-wide email address. Blank uses the template campaign's address."></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2"><lightning-input label="Terms page URL" data-k="termsUrl" value={opts.termsUrl} onchange={onOpt}></lightning-input></div>
+                </div>
+                <template lwc:if={sched}>
+                    <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_small">
+                        <thead><tr><th>Key date ({sched.timezone})</th><th>When</th><th>Rule carried over from the terms</th></tr></thead>
+                        <tbody><template for:each={schedRows} for:item="r"><tr key={r.key}><th class="lbl">{r.label}</th><td>{r.value}</td><td class="slds-text-color_weak">{r.rule}</td></tr></template></tbody>
+                    </table>
+                </template>
+                <div class="slds-grid slds-m-vertical_medium slds-grid_vertical-align-center">
+                    <div class="slds-col"><lightning-input type="toggle" label="Switch on the claim hub now" data-k="enable" checked={opts.enable} onchange={onOpt} message-toggle-active="" message-toggle-inactive=""></lightning-input></div>
+                    <div class="slds-col slds-text-align_right"><lightning-button variant="brand" label="Create campaign" onclick={make} disabled={cannotCreate}></lightning-button></div>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

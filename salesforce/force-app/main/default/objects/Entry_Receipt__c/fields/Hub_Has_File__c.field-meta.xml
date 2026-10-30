@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Hub_Has_File__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Claim hub: an invoice file is stored for this receipt (in Salesforce Files or outside).</description>
+    <label>Hub has file</label>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,8 @@
+.terms textarea { min-height: 220px; }
+.lbl { width: 40%; font-weight: 600; white-space: normal; }
+.models { columns: 2; font-size: 12px; margin-top: 6px; }
+.issue { border-left: 4px solid #c9c9c9; padding: 6px 10px; margin-bottom: 6px; background: #fafafa; }
+.issue.high { border-color: #ba0517; background: #fef1f1; }
+.issue.medium { border-color: #dd7a01; background: #fef6ec; }
+.issue.low { border-color: #747474; }
+.sev { font-size: 10px; letter-spacing: .05em; font-weight: 700; }
