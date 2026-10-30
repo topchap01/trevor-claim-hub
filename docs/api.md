@@ -36,7 +36,7 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 | `POST /api/claim/{token}/code` | `POST claims/{token}/code` | Emails a 6-digit bank-change code. |
 | `POST /api/claim/{token}/bank` | `POST claims/{token}/bank` | `{code, name, bsb?, account}` |
 | `POST /api/claim/{token}/chat` | `POST claims/{token}/chat` | `{messages:[{role, content}]}`, with the claim as context. |
-| `POST /api/resend` | `POST resend` | `{slug, email}`. Always `{sent:true}`, so it can't be used to test which emails have claims. |
+| `POST /api/resend` | `POST resend` | `{slug, email}`. Always `{sent:true}`, so it can't be used to test which emails have claims. Issues a new link code; the old link stops working. |
 | `GET /api/file?t=` | `GET files/{ticket}` | Staff only, by ticket. Streams the invoice from private storage. |
 | `GET /api/health` | `GET health` | 200 or 503 with counts. No personal data. |
 
@@ -44,7 +44,7 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 
 ```json
 {
-  "firstName": "Sam", "lastName": "Tester", "email": "sam@example.com", "mobile": "021 555 0142",
+  "firstName": "Sam", "lastName": "Tester", "email": "sam@example.com", "mobile": "021 555 0142", "acceptedTerms": true,
   "products": [
     { "promoProductId": "a0B...", "price": "4299", "serial": "61234567", "pnc": "949597455" }
   ],
@@ -61,16 +61,17 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 
 Each check refuses with a 4xx before anything is saved.
 
-1. The promotion is open.
+1. The promotion is open, and `acceptedTerms` is true.
 2. Name, email and mobile are present and valid.
 3. No claim exists with this email on this promotion. The database enforces this too, through the unique `Hub_Dedupe_Key__c`.
 4. The connection is under its daily limit.
-5. The minimum number of products is met.
+5. The number of products is within the promotion's minimum and maximum.
 6. Each product belongs to the promotion.
 7. A price is given for each product where spend matters.
 8. The minimum spend is met.
 9. The serial format is valid, the serial does not start with an excluded prefix, and no serial is entered twice on the form.
-10. The bank format is right for the country.
+10. The basket reaches a cashback tier.
+11. The bank format is right for the country.
 
 After saving, these are flagged for the team but not refused:
 - a third or later claim from one connection in 24 hours;

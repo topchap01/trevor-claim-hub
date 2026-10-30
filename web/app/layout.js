@@ -12,7 +12,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en-AU">
       <body>
-        <div className="testbar">Sandbox test. Made-up promotion, no real money is paid.</div>
+        {process.env.HUB_ENV !== 'production' && <div className="testbar">Sandbox test. Made-up promotion, no real money is paid.</div>}
         {children}
       </body>
     </html>

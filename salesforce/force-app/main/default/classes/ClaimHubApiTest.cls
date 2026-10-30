@@ -43,6 +43,35 @@ private class ClaimHubApiTest {
         System.assertEquals(1, ClaimHubTestFactory.events(ClaimHubTestFactory.entry(token).Id, 'Needs review: excluded serial'));
     }
 
+    @isTest static void wrongSecurityCodesCountEvenThoughTheRequestRollsBack() {
+        Promotional_Campaign__c c = ClaimHubTestFactory.campaign('AU', null);
+        String token = ClaimHubTestFactory.lodge(c.Id, 'otp@example.com', 1, true, 'AU');
+        System.assertEquals(200, call('POST', 'claims/' + token + '/code', new Map<String, Object>()).statusCode);
+        Map<String, Object> guess = new Map<String, Object>{ 'code' => '000000', 'name' => 'S Tester', 'bsb' => '063000', 'account' => '87654321' };
+        for (Integer i = 0; i < 5; i++) System.assertEquals(401, call('POST', 'claims/' + token + '/bank', guess).statusCode);
+        System.assertEquals(5, [SELECT Attempts__c FROM Claim_OTP__c WHERE Entry__r.Access_Token__c = :token].Attempts__c);
+        System.assertEquals(429, call('POST', 'claims/' + token + '/bank', guess).statusCode, 'sixth guess is refused even with the right code');
+        System.assertEquals(5, ClaimHubTestFactory.events(ClaimHubTestFactory.entry(token).Id, 'Wrong security code'));
+    }
+
+    @isTest static void aFreshLinkReplacesTheOldOne() {
+        Promotional_Campaign__c c = ClaimHubTestFactory.campaign('AU', null);
+        String token = ClaimHubTestFactory.lodge(c.Id, 'fresh@example.com', 1, false, 'AU');
+        System.assertEquals(200, call('POST', 'resend', new Map<String, Object>{ 'slug' => ClaimHubTestFactory.SLUG, 'email' => ' Fresh@example.com ' }).statusCode);
+        System.assertEquals(404, call('GET', 'claims/' + token, null).statusCode, 'old link no longer works');
+        System.assertEquals(1, [SELECT COUNT() FROM Entry__c WHERE Consumer_Email_Stamp__c = 'fresh@example.com' AND Access_Token__c != :token]);
+    }
+
+    @isTest static void filesMustBelongToTheClaim() {
+        Promotional_Campaign__c c = ClaimHubTestFactory.campaign('AU', null);
+        String token = ClaimHubTestFactory.lodge(c.Id, 'file@example.com', 1, false, 'AU');
+        Map<String, Object> req = ClaimHubTestFactory.receiptRequest();
+        req.put('fileKey', 'invoices/someone-else/invoice.jpg');
+        System.assertEquals(400, call('POST', 'claims/' + token + '/receipt', req).statusCode);
+        req.remove('fileKey'); req.put('contentType', 'text/html');
+        System.assertEquals(415, call('POST', 'claims/' + token + '/receipt', req).statusCode);
+    }
+
     @isTest static void badRequestsGetPlainErrors() {
         ClaimHubTestFactory.campaign('AU', null);
         System.assertEquals(404, call('GET', 'nowhere', null).statusCode);
@@ -50,7 +79,7 @@ private class ClaimHubApiTest {
         System.assertEquals(400, call('POST', 'resend', 'this is not json').statusCode);
         System.assertEquals(400, call('POST', 'resend', '[1,2]').statusCode);
         RestResponse r = call('POST', 'campaigns/' + ClaimHubTestFactory.SLUG + '/claims', new Map<String, Object>{ 'firstName' => 'A', 'lastName' => 'B', 'email' => 'a@example.com', 'mobile' => '0412345678', 'products' => 'not a list' });
-        System.assertEquals(500, r.statusCode, 'unexpected failure');
+        System.assertEquals(400, r.statusCode, 'a field of the wrong type is the caller\'s mistake');
         System.assert(!r.responseBody.toString().contains('TypeException'), 'no internals leak to the caller');
         System.assertEquals(404, call('GET', 'files/' + 'x'.repeat(43), null).statusCode);
         RestResponse h = call('GET', 'health', null);

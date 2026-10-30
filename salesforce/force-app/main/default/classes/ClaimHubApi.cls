@@ -44,14 +44,27 @@ global without sharing class ClaimHubApi {
             if (sp != null) Database.rollback(sp);
             // A refusal can still need the team (duplicate or excluded serial): record it after the rollback
             if (ex.flagEntry != null) ClaimHubLog.event(ex.flagEntry, 'System', ex.flagAction, ex.flagDetail);
+            if (ex.failedOtp != null) countFailedCode(ex.failedOtp);
             res.statusCode = ex.status;
             res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => ex.getMessage() }));
+        } catch (TypeException ex) {
+            // A field of the wrong type (e.g. products not a list): the caller's mistake, not ours
+            if (sp != null) Database.rollback(sp);
+            res.statusCode = 400;
+            res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => 'Bad request' }));
         } catch (Exception ex) {
             if (sp != null) Database.rollback(sp);
             // Details stay in the log; the caller gets a reference support can look up
             String ref = ClaimHubLog.error('Claim hub API ' + method + ' /' + String.join(p, '/').replaceAll('[A-Za-z0-9_-]{40,64}', '{token}'), ex);
             res.statusCode = 500;
             res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => 'Something went wrong. Please try again.', 'ref' => ref }));
+        }
+    }
+
+    static void countFailedCode(Id otpId) {
+        for (Claim_OTP__c o : [SELECT Attempts__c FROM Claim_OTP__c WHERE Id = :otpId FOR UPDATE]) {
+            o.Attempts__c = (o.Attempts__c == null ? 0 : o.Attempts__c) + 1;
+            update o;
         }
     }
 

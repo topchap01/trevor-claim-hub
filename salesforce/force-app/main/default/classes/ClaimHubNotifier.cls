@@ -80,8 +80,12 @@ public without sharing class ClaimHubNotifier {
 
     // ------------------------------------------------------------------ sending
     public static void dispatchDue() {
+        Map<Id, Claim_Notification__c> oldest = new Map<Id, Claim_Notification__c>([SELECT Id FROM Claim_Notification__c
+            WHERE Status__c = 'Queued' AND Send_After__c <= :Datetime.now() ORDER BY Send_After__c LIMIT 50]);
+        if (oldest.isEmpty()) return;
+        // Lock the rows and re-check their status, so two dispatchers running at once can never send the same email twice
         List<Claim_Notification__c> due = [SELECT Id, Entry__c, Template_Key__c, Changes__c, Attempts__c FROM Claim_Notification__c
-            WHERE Status__c = 'Queued' AND Send_After__c <= :Datetime.now() ORDER BY Send_After__c LIMIT 50];
+            WHERE Id IN :oldest.keySet() AND Status__c = 'Queued' FOR UPDATE];
         if (due.isEmpty()) return;
         Set<Id> entryIds = new Set<Id>();
         for (Claim_Notification__c n : due) entryIds.add(n.Entry__c);
@@ -201,7 +205,7 @@ public without sharing class ClaimHubNotifier {
         if (key == 'VALID') {
             return new List<String>{ 'Your claim has been approved', wrap(e, 'Approved', new List<String>{
                 'Good news, ' + first + '. Claim ' + e.Name + ' has been checked and approved.',
-                amount + ' will be paid to your account ending ' + ClaimHubService.last3(ClaimHubService.accountNumber(e)) + ' ' + (e.Promotional_Campaign__r.Hub_Payment_Promise__c == null ? 'in the next payment run' : e.Promotional_Campaign__r.Hub_Payment_Promise__c) + '.' }, 'Track my claim', link(e)) };
+                amount + ' will be paid to your account ending ' + ClaimHubService.last3(ClaimHubService.accountNumber(e)) + ' ' + (e.Promotional_Campaign__r.Hub_Payment_Promise__c == null ? 'in the next payment run' : e.Promotional_Campaign__r.Hub_Payment_Promise__c.escapeHtml4()) + '.' }, 'Track my claim', link(e)) };
         }
         if (key == 'PAID') {
             return new List<String>{ 'Your ' + amount + ' cashback has been paid', wrap(e, 'Paid', new List<String>{
@@ -238,7 +242,8 @@ public without sharing class ClaimHubNotifier {
     }
 
     static String wrap(Entry__c e, String heading, List<String> paras, String button, String url) {
-        String color = String.isBlank(e.Promotional_Campaign__r.Hub_Brand_Color__c) ? '#041E50' : e.Promotional_Campaign__r.Hub_Brand_Color__c;
+        String brand = e.Promotional_Campaign__r.Hub_Brand_Color__c;
+        String color = brand != null && Pattern.matches('^#[0-9A-Fa-f]{3,8}$', brand) ? brand : '#041E50';
         String h = '<div style="background:#f4f5f7;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#1b1f24">'
             + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden">'
             + '<div style="background:' + color + ';color:#ffffff;padding:18px 24px;font-size:13px;letter-spacing:.06em;text-transform:uppercase">' + e.Promotional_Campaign__r.Name.escapeHtml4() + '</div>'

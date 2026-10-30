@@ -7,9 +7,9 @@
  * if the terms give claims close one month after the promotion, serials three months after and bank details four
  * months after, a new end date of 31 December gives 31 January, 31 March and 30 April.
  */
-/* System mode on purpose: this runs as the API-only integration user, whose profile grants no object access.
- * Access is controlled by who can call the code (ClaimHubApi via the Claim Hub Integration permission set; staff
- * entry points via Claim Hub Admin), not by object permissions. See docs/security.md. */
+/* Staff-only: reachable from the Campaign from Terms screen, which needs the Claim Hub Admin permission set.
+ * Creates the campaign, tiers and product records in system mode so a staff member without create rights on the
+ * product master can still build a campaign. Record sharing still applies (with sharing). */
 @SuppressWarnings('PMD.ApexCRUDViolation')
 public with sharing class ClaimHubTerms {
 

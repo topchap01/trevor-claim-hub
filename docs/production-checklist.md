@@ -42,7 +42,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 
 - [ ] New Vercel project, or production environment, connected to this repository's `main` branch.
 - [ ] Environment variables: `SF_LOGIN_URL` (`https://login.salesforce.com` or the My Domain), `SF_AUDIENCE=https://login.salesforce.com`, `SF_USERNAME`, `SF_CLIENT_ID`, `SF_PRIVATE_KEY` (sensitive), and `BLOB_READ_WRITE_TOKEN` (from connecting a production Blob store).
-- [ ] Remove the sandbox banner in `web/app/layout.js`, and the `/` redirect to the demo slug in `web/app/page.js`.
+- [ ] Set `HUB_ENV=production` to remove the sandbox banner. Leave `HUB_HOME_SLUG` unset, so the bare domain shows nothing.
 - [ ] Custom domain and HTTPS.
 - [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny.
 - [ ] Uptime monitor on `/api/health`.
@@ -52,4 +52,4 @@ Nothing in this repository has been deployed to production. Production Salesforc
 
 - [ ] Smoke test passes against production with a hidden test campaign.
 - [ ] One real claim end to end, approved and paid through the existing payment file.
-- [ ] Weekly reports show the hub claims (they filter on the campaign stamp and `Date_Validated__c`, which the hub sets).
+- [ ] Weekly reports show the hub claims. They filter on `Promotional_Campaign_Stamp__c`, which the hub sets, and `Date_Validated__c`, which the existing `Entry_Automation_1` flow sets when a claim becomes Valid.

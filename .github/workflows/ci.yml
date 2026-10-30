@@ -61,7 +61,7 @@ jobs:
         env:
           SF_SANDBOX_JWT_KEY: ${{ secrets.SF_SANDBOX_JWT_KEY }}
         run: |
-          if [ -z "$SF_SANDBOX_JWT_KEY" ]; then echo "Sandbox secrets not set; skipping"; exit 0; fi
+          if [ -z "$SF_SANDBOX_JWT_KEY" ]; then echo "::warning title=Apex tests not run::Sandbox secrets are not set, so this run did not deploy or test any Apex. Set SF_SANDBOX_* secrets."; exit 0; fi
           echo "$SF_SANDBOX_JWT_KEY" > server.key
           sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
             --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci
@@ -70,6 +70,6 @@ jobs:
         if: ${{ env.SKIP != 'true' }}
         working-directory: salesforce
         run: |
-          sf org display -o ci >/dev/null 2>&1 || { echo "Not signed in; skipping"; exit 0; }
+          sf org display -o ci >/dev/null 2>&1 || { echo "::warning title=Apex tests not run::Not signed in to the sandbox."; exit 0; }
           TESTS=$(ls force-app/main/default/classes/*Test.cls | xargs -n1 basename | sed 's/\.cls$//' | paste -sd, -)
           sf project deploy validate -o ci -d force-app --test-level RunSpecifiedTests --tests ${TESTS//,/ --tests } --coverage-formatters text --wait 30

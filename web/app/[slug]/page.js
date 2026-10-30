@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { hub, okSlug } from '@/lib/sf';
+import { campaign, okSlug } from '@/lib/sf';
 import ClaimForm from './ClaimForm';
 import ResendForm from './ResendForm';
 import Chat from '@/components/Chat';
@@ -26,7 +26,7 @@ function fmt(iso, tz) {
 export default async function CampaignPage({ params: paramsP }) {
   const params = await paramsP;
   if (!okSlug(params.slug)) notFound();
-  const { status, data: c } = await hub(`campaigns/${params.slug}`);
+  const { status, data: c } = await campaign(params.slug);
   if (status !== 200) notFound();
   const tz = c.timezone || 'Australia/Sydney';
   return (

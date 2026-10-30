@@ -71,6 +71,17 @@ export async function hub(path, { method = 'GET', body, ip } = {}) {
 /** Claim link codes never go into logs. */
 const redact = (p) => String(p).replace(/[A-Za-z0-9_-]{40,64}/g, '{token}');
 
+const campaignCache = new Map(); // slug -> { at, result }: promotion details change rarely; spares the org's API allowance
+
+/** Public promotion details, cached for 60 seconds per server instance. */
+export async function campaign(slug) {
+  const hit = campaignCache.get(slug);
+  if (hit && Date.now() - hit.at < 60_000) return hit.result;
+  const result = await hub(`campaigns/${slug}`);
+  if (result.status === 200) campaignCache.set(slug, { at: Date.now(), result });
+  return result;
+}
+
 export function json(result) {
   return new Response(JSON.stringify(result.data), {
     status: result.status,

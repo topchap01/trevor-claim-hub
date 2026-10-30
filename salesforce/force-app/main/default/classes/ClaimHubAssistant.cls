@@ -22,8 +22,20 @@ public without sharing class ClaimHubAssistant {
 
     public static Map<String, Object> chatForCampaign(String slug, Map<String, Object> req) {
         Promotional_Campaign__c c = ClaimHubService.campaignBySlug(slug);
-        return chat(c, null, req);
+        // Before a claim exists there is no claim to count against, so count by (hashed) connection instead
+        String ipHash = req.get('_ip') == null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(String.valueOf(req.get('_ip')) + ':' + UserInfo.getOrganizationId())));
+        if (ipHash != null) {
+            Integer asked = [SELECT COUNT() FROM Claim_Event__c WHERE Entry__c = null AND Action__c = :PUBLIC_QUESTION AND Detail__c = :ipHash AND CreatedDate = TODAY];
+            if (asked >= ClaimHubSettings.chatDailyLimit() / 2) {
+                return new Map<String, Object>{ 'reply' => 'You have asked a lot of questions today. Please email the team and they will help.', 'handover' => false };
+            }
+        }
+        Map<String, Object> out = chat(c, null, req);
+        if (ipHash != null) ClaimHubLog.event(null, 'Visitor', PUBLIC_QUESTION, ipHash);
+        return out;
     }
+
+    static final String PUBLIC_QUESTION = 'Asked the assistant (promotion page)';
 
     public static Map<String, Object> chatForClaim(String token, Map<String, Object> req) {
         Entry__c e = ClaimHubService.byToken(token);

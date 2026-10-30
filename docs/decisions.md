@@ -45,7 +45,7 @@ Short records of the choices that shape the code, and what would change them.
 
 **8. Bank changes need an emailed code.** SMS would be stronger against a compromised mailbox, but needs an SMS provider. *Revisit for* high-value campaigns.
 
-**9. Emails go through an outbox object.** Every email is a record before it is sent, so nothing is lost when sending fails, staff can see what each claimant received, and changes made close together are merged into one email.
+**9. Emails go through an outbox object, with one dispatcher.** Every email is a record before it is sent, so nothing is lost when sending fails, staff can see what each claimant received, and changes made close together are merged into one email. The dispatcher locks the rows it sends (`FOR UPDATE`, status re-checked). A delayed job only re-queues itself when no other dispatcher is waiting, so overlapping runs never send an email twice and job chains never multiply.
 
 ## Known follow-ups
 
@@ -54,3 +54,5 @@ Short records of the choices that shape the code, and what would change them.
 - Instant-win and prize-draw mechanics: designed but not built (winning moments drawn and sealed in advance, awarded under a row lock).
 - k6 load test script.
 - Automated invoice file retention.
+- A nightly reconcile job: Blob files no receipt points to (left behind when Salesforce timed out), and receipts whose file is missing.
+- Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs.

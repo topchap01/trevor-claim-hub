@@ -11,6 +11,8 @@ public without sharing class ClaimHubService {
     public class HubException extends Exception {
         public Integer status = 400;
         public Id flagEntry; public String flagAction; public String flagDetail;
+        /** A security code whose wrong guess must still count after the API rolls the request back. */
+        public Id failedOtp;
         public HubException flag(Id entryId, String action, String detail) { flagEntry = entryId; flagAction = action; flagDetail = detail == null ? null : detail.left(255); return this; }
         public HubException(Integer status, String message) { this(message); this.status = status; }
     }
@@ -143,10 +145,14 @@ public without sharing class ClaimHubService {
         Integer fromIp = ipHash == null ? 0 : [SELECT COUNT() FROM Entry__c WHERE Hub_Client_IP_Hash__c = :ipHash AND CreatedDate = LAST_N_DAYS:1];
         if (fromIp >= ClaimHubSettings.claimsPerIpDaily()) throw new HubException(429, 'We have had a lot of claims from your connection today. Please try again tomorrow, or email us.');
 
+        if (req.get('acceptedTerms') != true) throw new HubException(400, 'Please confirm you have read the terms.');
+        if (!(req.get('products') instanceof List<Object>)) throw new HubException(400, 'Add the appliances you bought.');
         List<Object> items = (List<Object>) req.get('products');
         if (items == null || items.isEmpty()) throw new HubException(400, 'Add the appliances you bought.');
         Integer minQ = c.Minimum_Number_Of_Products__c == null ? 1 : c.Minimum_Number_Of_Products__c.intValue();
         if (items.size() < minQ) throw new HubException(400, 'This promotion needs at least ' + minQ + ' participating appliances.');
+        Integer maxQ = c.Maximum_Number_Of_Products__c == null ? 20 : c.Maximum_Number_Of_Products__c.intValue();
+        if (items.size() > maxQ) throw new HubException(400, 'This promotion allows up to ' + maxQ + ' appliances per claim.');
 
         Map<Id, Promotional_Product__c> promo = new Map<Id, Promotional_Product__c>([
             SELECT Id, Campaign_Products__c, Campaign_Products__r.Name, Campaign_Products__r.Name__c
@@ -177,13 +183,15 @@ public without sharing class ClaimHubService {
             if (!formSerials.add(sv.trim().toUpperCase())) throw new HubException(400, 'The same serial number is entered twice.');
         }
 
+        Cashback_Range__c range = rangeFor(c.Id, items.size(), spend);
+        if (range == null && !ranges(c.Id).isEmpty()) throw new HubException(400, 'These appliances don\'t reach a cashback level in this promotion. Check the offer details above.');
+
         Lead l = new Lead(FirstName = first, LastName = last, Email = email, MobilePhone = mobile, Company = 'None');
         if (country(c.Hub_Country__c) == 'NZ') l.Contact_Number__c = mobile;
         Map<String, Object> bank = (Map<String, Object>) req.get('bank');
         if (bank != null) applyBank(l, bank, c.Hub_Country__c);
         insert l;
 
-        Cashback_Range__c range = rangeFor(c.Id, items.size(), spend);
         Decimal cashback = range == null ? null : amountFor(range, spend);
         if (cashback != null && c.Hub_Max_Cashback__c != null && cashback > c.Hub_Max_Cashback__c) cashback = c.Hub_Max_Cashback__c;
         Id entryRt = c.Entry_Record_Type_ID__c != null ? (Id) c.Entry_Record_Type_ID__c : hubRecordType('Entry__c');
@@ -195,7 +203,7 @@ public without sharing class ClaimHubService {
             Consumer_Mobile_Stamp__c = mobile, Hub_Last_Activity__c = now, Purchase_Price__c = spend > 0 ? spend : null,
             // The claim form cannot be submitted without ticking "I've read the terms"
             I_have_read_and_accepted_the_promotion__c = true,
-            Hub_Dedupe_Key__c = hash(c.Id + ':' + email), Hub_Client_IP_Hash__c = ipHash);
+            Hub_Dedupe_Key__c = hash(c.Id + ':' + email), Hub_Client_IP_Hash__c = ipHash, Access_Token__c = ClaimAccessToken.newToken());
         // Same stamps the old entry trigger sets (it only finds campaigns by record type): weekly reports and the C4C feed read them
         if (e.Created_At_Datetime__c == null) {
             e.Created_At_Datetime__c = now;
@@ -418,10 +426,12 @@ public without sharing class ClaimHubService {
         Entry__c e = byToken(token);
         guardOpen(e);
         String b64 = req(req, 'base64');
-        String mediaType = String.valueOf(req.get('contentType') == null ? 'image/jpeg' : req.get('contentType'));
+        String mediaType = mediaType(req.get('contentType'));
         if (b64.length() > 2100000) throw new HubException(413, 'That file is too large. Try a photo instead of a scan.');
         if (ClaimHubLog.countToday(e.Id, 'Invoice uploaded') >= ClaimHubSettings.uploadDailyLimit()) throw new HubException(429, 'That is a lot of uploads for one day. Please try again tomorrow, or reply to any of our emails.');
-        String fileKey = req.get('fileKey') == null ? null : String.valueOf(req.get('fileKey')).left(255);
+        String fileKey = req.get('fileKey') == null ? null : String.valueOf(req.get('fileKey'));
+        // The web app stores files under invoices/<first 24 hex of sha256(link code)>/; anything else is refused
+        if (fileKey != null && !fileKey.startsWith('invoices/' + hash(token).left(24) + '/')) throw new HubException(400, 'Bad request');
         // Read the invoice first (callouts must happen before any database writes)
         Map<String, Object> ocr = ClaimHubVision.readInvoice(b64, mediaType, country(e.Promotional_Campaign__r.Hub_Country__c));
         List<String> checks = ClaimHubInvoice.invoiceChecks(e, ocr);
@@ -430,7 +440,10 @@ public without sharing class ClaimHubService {
         if (other != null) checks.add('Invoice ' + String.valueOf(ocr.get('invoiceNumber')).left(40) + ' is already on claim ' + other.Entry__r.Name);
         Blob data;
         try { data = EncodingUtil.base64Decode(b64); } catch (Exception ex) { throw new HubException(400, 'That file could not be read. Try again.'); }
-        String fileName = String.valueOf(req.get('fileName') == null ? 'invoice.jpg' : req.get('fileName'));
+        String fileName = String.valueOf(req.get('fileName') == null ? 'invoice.jpg' : req.get('fileName')).left(100);
+        // Everything below is database work: undo all of it if any part fails, so a claim never says it has an invoice it doesn't
+        Savepoint afterRead = Database.setSavepoint();
+        try {
         Entry_Receipt__c r = e.Entry_Receipts__r.isEmpty() ? new Entry_Receipt__c(Entry__c = e.Id, RecordTypeId = receiptRecordType([SELECT RecordTypeId FROM Entry__c WHERE Id = :e.Id].RecordTypeId)) : e.Entry_Receipts__r[0];
         if (ocr.get('invoiceNumber') != null) r.OCR_Invoice_Number__c = String.valueOf(ocr.get('invoiceNumber')).left(255);
         if (ocr.get('invoiceDate') != null) r.OCR_Invoice_Date__c = String.valueOf(ocr.get('invoiceDate')).left(255);
@@ -455,6 +468,10 @@ public without sharing class ClaimHubService {
         ClaimHubLog.event(e.Id, 'System', 'Invoice read automatically', r.OCR_Status__c);
         Entry__c fresh = load(e.Id);
         recompute(fresh, 'Your invoice');
+        } catch (Exception ex) {
+            Database.rollback(afterRead);
+            throw ex;
+        }
         return view(token);
     }
 
@@ -462,7 +479,7 @@ public without sharing class ClaimHubService {
     public static Map<String, Object> readPlate(String token, Map<String, Object> req) {
         Entry__c e = byToken(token);
         if (ClaimHubLog.countToday(e.Id, 'Scanned a rating plate') >= ClaimHubSettings.plateDailyLimit()) throw new HubException(429, 'That is a lot of scans for one day. Type the serial number in instead.');
-        Map<String, Object> out = ClaimHubVision.readPlate(req(req, 'base64'), String.valueOf(req.get('contentType') == null ? 'image/jpeg' : req.get('contentType')));
+        Map<String, Object> out = ClaimHubVision.readPlate(req(req, 'base64'), mediaType(req.get('contentType')));
         ClaimHubLog.event(e.Id, 'Claimant', 'Scanned a rating plate', out.containsKey('error') ? 'Not readable' : 'Read ' + out.get('serial'));
         return out;
     }
@@ -489,9 +506,10 @@ public without sharing class ClaimHubService {
         Claim_OTP__c otp = codes[0];
         if (otp.Attempts__c >= 5) throw new HubException(429, 'Too many attempts. Ask for a new code.');
         if (otp.Code_Hash__c != hash(e.Id + ':' + code)) {
-            otp.Attempts__c += 1; update otp;
-            ClaimHubLog.event(e.Id, 'Claimant', 'Wrong security code', null);
-            throw new HubException(401, 'That code doesn\'t match. Check it and try again.');
+            // Counted after the API's rollback (ClaimHubApi), so every wrong guess sticks
+            HubException wrong = new HubException(401, 'That code doesn\'t match. Check it and try again.').flag(e.Id, 'Wrong security code', null);
+            wrong.failedOtp = otp.Id;
+            throw wrong;
         }
         otp.Used__c = true; update otp;
 
@@ -518,11 +536,11 @@ public without sharing class ClaimHubService {
 
     public static Map<String, Object> resendLink(Map<String, Object> req) {
         Promotional_Campaign__c c = campaignBySlug(req(req, 'slug'));
-        String email = req(req, 'email').toLowerCase();
+        String email = req(req, 'email').trim().toLowerCase();
         List<Entry__c> es = [SELECT Id FROM Entry__c WHERE Promotional_Campaign__c = :c.Id AND Consumer_Email_Stamp__c = :email LIMIT 1];
         Integer sentToday = es.isEmpty() ? 0 : [SELECT COUNT() FROM Claim_Notification__c WHERE Entry__c = :es[0].Id AND Template_Key__c = 'LINK' AND CreatedDate = LAST_N_DAYS:1];
         if (!es.isEmpty() && sentToday < ClaimHubSettings.linkDailyLimit()) {
-            ClaimAccessToken.ensureToken(es[0].Id);
+            ClaimAccessToken.rotate(es[0].Id); // the email says older links stop working, so they must
             ClaimHubNotifier.enqueueNow(es[0].Id, 'LINK');
             ClaimHubLog.event(es[0].Id, 'Claimant', 'Asked for a fresh link', null);
         }
@@ -615,6 +633,15 @@ public without sharing class ClaimHubService {
         String s = String.valueOf(v).replaceAll('[^0-9.]', '');
         if (String.isBlank(s)) return null;
         try { Decimal d = Decimal.valueOf(s); return d > 0 && d < 1000000 ? d.setScale(2, RoundingMode.HALF_UP) : null; } catch (Exception ex) { return null; }
+    }
+
+    static final Set<String> MEDIA_TYPES = new Set<String>{ 'image/jpeg', 'image/png', 'image/webp', 'application/pdf' };
+
+    /** File types Claude can read. Anything else is refused before it is sent. */
+    static String mediaType(Object v) {
+        String t = v == null ? 'image/jpeg' : String.valueOf(v).toLowerCase();
+        if (!MEDIA_TYPES.contains(t)) throw new HubException(415, 'Please upload a photo (JPEG or PNG) or a PDF.');
+        return t;
     }
 
     static Id idOrNull(Object v) {

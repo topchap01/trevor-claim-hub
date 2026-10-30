@@ -5,7 +5,7 @@ import { put, get, del } from '@vercel/blob';
 
 export const blobEnabled = () => !!process.env.BLOB_READ_WRITE_TOKEN;
 
-const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'application/pdf': 'pdf' };
+const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' }; // what Claude can read
 
 /** Stores the file privately. The path holds a hash of the claim link, never the link itself. Returns the storage key. */
 export async function storeInvoice(token, base64, contentType) {

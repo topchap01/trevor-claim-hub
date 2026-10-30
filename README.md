@@ -13,7 +13,7 @@ Status: running end to end in the **Wizard sandbox**. Not yet in production. See
 | Path | What it is |
 |---|---|
 | `salesforce/force-app` | The hub engine. Apex REST API, status engine, email outbox, reminders, health monitor, terms-to-campaign builder, staff console (LWC), custom objects and fields, permission sets, tests. |
-| `salesforce/legacy-patches` | Changes to existing org components the hub needs. Currently one null guard in the `PromotionalCampainCreation` trigger. Review these separately: they touch code the old claim forms use. |
+| `salesforce/legacy-patches` | Changes to existing org components. A null guard in the `PromotionalCampainCreation` trigger, plus the earlier claim-link fix's backfill job and its test, which exercise old-form classes not in this repository. Review these separately: they touch code the old claim forms use. |
 | `salesforce/integration` | The External Client App the web app signs in with (OAuth JWT bearer, certificate only, no secret). Org-specific. |
 | `web` | The Next.js 16 claim pages and their server routes. These are the only callers of the Salesforce API. |
 | `scripts` | Test runner, end-to-end smoke test, job scheduling. |
@@ -29,7 +29,7 @@ Status: running end to end in the **Wizard sandbox**. Not yet in production. See
 # Salesforce: deploy, then run every hub test with coverage
 sf org login web --instance-url https://test.salesforce.com --alias wizard
 cd salesforce && sf project deploy start -o wizard -d force-app --wait 20 && cd ..
-scripts/run-apex-tests.sh wizard          # 52 tests, 96% coverage of hub classes
+scripts/run-apex-tests.sh wizard          # all hub tests, about 95% coverage of hub classes
 
 # Web: lint, unit tests, production build
 cd web && npm ci && npm run lint && npm test && npm run build
@@ -42,7 +42,7 @@ node scripts/smoke-test.mjs http://127.0.0.1:3100 aeg-nz-cashback
 
 ## Quality gates
 
-- **Apex:** 52 tests, all passing, 96% line coverage across hub classes. Callouts to Claude are faked by `ClaimHubTestFactory.Claude`, so tests never call the real API. Bulk tests prove the status handler, reminders and outbox stay inside governor limits.
+- **Apex:** 47 tests, all passing, 95% line coverage across hub classes. That includes tests through the REST layer for the security-code limit, link rotation and file ownership. Callouts to Claude are faked by `ClaimHubTestFactory.Claude`, so tests never call the real API. Bulk tests prove the status handler, reminders and outbox stay inside governor limits.
 - **Static analysis:** `sf code-analyzer run --workspace force-app --rule-selector Recommended --config-file code-analyzer.yml`. No critical or high findings.
   - CRUD/FLS findings are suppressed on purpose, with the reason written in each class. The API runs in system mode as a minimum-access integration user. See security.md.
   - Complexity findings remain on `lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render`. These are listed as follow-ups in [docs/decisions.md](docs/decisions.md).

@@ -42,7 +42,7 @@ public without sharing class ClaimHubVision {
 
     /** Plain chat completion. Returns the reply text, or null if Claude is unavailable. */
     public static String chat(String systemPrompt, List<Object> messages) {
-        HttpResponse res = post(message(500, systemPrompt, messages), 60000);
+        HttpResponse res = post(message(500, systemPrompt, messages), 35000);
         return res == null || res.getStatusCode() != 200 ? null : text(res);
     }
 
@@ -53,7 +53,7 @@ public without sharing class ClaimHubVision {
         List<Object> content = new List<Object>{
             new Map<String, Object>{ 'type' => pdf ? 'document' : 'image', 'source' => source },
             new Map<String, Object>{ 'type' => 'text', 'text' => instruction } };
-        return parseJson(post(message(1200, null, new List<Object>{ new Map<String, Object>{ 'role' => 'user', 'content' => content } }), 60000));
+        return parseJson(post(message(1200, null, new List<Object>{ new Map<String, Object>{ 'role' => 'user', 'content' => content } }), 35000));
     }
 
     static Map<String, Object> message(Integer maxTokens, String systemPrompt, List<Object> messages) {

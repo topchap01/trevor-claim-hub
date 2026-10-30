@@ -42,6 +42,7 @@ export default function ClaimForm({ campaign }) {
     setBusy(true);
     try {
       const out = await api(`campaign/${campaign.slug}/claim`, {
+        acceptedTerms: agree,
         ...me,
         products: chosen.map((r) => ({ promoProductId: r.promoProductId, price: r.price || null })),
         bank: addBank ? bank : null,

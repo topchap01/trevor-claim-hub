@@ -20,6 +20,8 @@ export async function GET(req) {
     headers: {
       'Content-Type': file.blob.contentType || 'application/octet-stream',
       'Content-Disposition': 'inline',
+      // The bytes came from a claimant: show them, but never let them run as a page on this domain
+      'Content-Security-Policy': "sandbox; default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
       'Cache-Control': 'private, no-store',
       'X-Robots-Tag': 'noindex',
     },

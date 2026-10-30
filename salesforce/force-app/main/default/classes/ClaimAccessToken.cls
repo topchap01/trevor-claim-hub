@@ -55,6 +55,16 @@ public without sharing class ClaimAccessToken {
         return e.Access_Token__c;
     }
 
+    /** Replaces the claim's link code, so every older link stops working. Returns the new code. */
+    public static String rotate(Id entryId) {
+        Entry__c e = [SELECT Id, Access_Token__c, Promotional_Campaign__c, Promotional_Campaign__r.Edit_URL__c, Promotional_Campaign__r.Status_URL__c
+                      FROM Entry__c WHERE Id = :entryId];
+        e.Access_Token__c = null;
+        stamp(new List<Entry__c>{ e }, new Map<Id, Promotional_Campaign__c>{ e.Promotional_Campaign__c => e.Promotional_Campaign__r });
+        update new Entry__c(Id = e.Id, Access_Token__c = e.Access_Token__c, Resume_Url__c = e.Resume_Url__c, Status_URL__c = e.Status_URL__c);
+        return e.Access_Token__c;
+    }
+
     /** Assigns codes and rebuilds links for the given claims (no DML). */
     public static void stamp(List<Entry__c> entries, Map<Id, Promotional_Campaign__c> campaigns) {
         for (Entry__c e : entries) {

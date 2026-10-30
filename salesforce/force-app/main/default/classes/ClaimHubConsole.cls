@@ -119,12 +119,17 @@ public with sharing class ClaimHubConsole {
     @AuraEnabled
     public static void reject(Id entryId, String reason) {
         if (String.isBlank(reason)) throw new AuraHandledException('Choose a reason.');
+        Entry__c e = [SELECT Entry_Status__c, EFT_Status__c FROM Entry__c WHERE Id = :entryId WITH USER_MODE];
+        String stage = ClaimHubService.stage(e);
+        if (stage == 'paid' || stage == 'not_approved') throw new AuraHandledException('This claim has already been ' + (stage == 'paid' ? 'paid' : 'rejected') + '.');
         update as user new Entry__c(Id = entryId, Entry_Status__c = 'Invalid', Invalid_Reason__c = reason);
     }
 
     /** A short-lived link to the claim's invoice file (see ClaimHubFiles). */
     @AuraEnabled
     public static String invoiceLink(Id entryId) {
+        // Only for claims this staff member can see
+        if ([SELECT COUNT() FROM Entry__c WHERE Id = :entryId WITH USER_MODE] == 0) throw new AuraHandledException('Claim not found.');
         try { return ClaimHubFiles.invoiceLink(entryId); }
         catch (Exception ex) { throw new AuraHandledException(ex.getMessage()); }
     }

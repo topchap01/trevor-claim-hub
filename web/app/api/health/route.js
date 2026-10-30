@@ -11,7 +11,7 @@ export async function GET() {
     ok: r.status === 200 && r.data.ok === true,
     salesforce: r.status === 200 ? 'reachable' : `error ${r.status}`,
     responseMs: Date.now() - started,
-    ...(r.status === 200 ? r.data : {}),
+    problems: r.status === 200 ? (r.data.problems || []).length : null, // counts only; details are in Salesforce
   };
   return new Response(JSON.stringify(body), {
     status: body.ok ? 200 : 503,
