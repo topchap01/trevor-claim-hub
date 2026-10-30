@@ -16,7 +16,7 @@
     "react-dom": "19.3.1"
   },
   "engines": {
-    "node": ">=20.9"
+    "node": "22.x"
   },
   "type": "module",
   "devDependencies": {
