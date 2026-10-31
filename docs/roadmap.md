@@ -17,6 +17,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
+- [ ] Sandbox web address `trevor-claim-hub-test.vercel.app` is open to anyone (Vercel SSO covers only preview and per-deployment addresses). Anyone with the address can lodge test claims into Wizard and trigger paid invoice reads. Keep it open for testing and client sign-off, or protect it? (audit, 31 Oct 2026)
 - [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #11).
 
 ## Phase 1: Developer handover (now)
@@ -24,10 +25,14 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Engine, claim pages, builder, staff console in the sandbox
 - [x] 47 Apex tests, 95% coverage; static analysis clean of high findings; independent review fixes
 - [x] Code on GitHub; Vercel deploys from `main`
-- [ ] Replace the sandbox integration key (exposed in a working session; see runbook)
+- [x] **Apex tests run in CI (31 Oct 2026).** `SF_SANDBOX_*` secrets set (Mark) and the CI user pre-authorised on the Claim Hub CI app in Wizard (#7). First real run, on #7: signed in to Wizard, check-only deploy, 62 of 62 tests pass (deploy ID 0Af9p00000ZhnxNCAR). CI signs in as Mark's Wizard admin user; a dedicated CI user would be tidier before Nas starts.
+- [x] Apex for #3 (bank checks), #4 (returning claimants) and #6 (coverage fix) deployed to Wizard together, 62 of 62 tests passing, claim journey passing on all three campaigns (31 Oct 2026). **Wizard is now ahead of `main`.**
+- [x] Merged #6, #3 and #4 to `main` (31 Oct 2026). Wizard and `main` match again.
+- [ ] Replace the sandbox integration key (exposed in a working session; see runbook). Still the original key on 31 Oct 2026.
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
-- [ ] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #11). Built; merge once the Apex tests pass in Wizard, then load the registers into Wizard.
+- [x] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #11). Merged and in Wizard (31 Oct 2026).
+- [ ] Load the bank registers into Wizard with `scripts/load-bank-register.mjs` (`--dry-run` first). Until then only format and check digit are tested.
 
 ## Phase 2: First production campaign
 
@@ -54,7 +59,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 - [ ] Email wording editable by staff (templates out of Apex)
 - [ ] Client reporting view (read-only, per client)
 - [ ] Nightly reconcile of invoice files; automated retention
-- [ ] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Built; deploy the Apex to Wizard and run its tests before merging.
+- [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
 - [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
 - [ ] Account name check before payment (Confirmation of Payee), if the paying bank offers it for batch payments
 - [ ] More mechanics: gift with purchase, then instant win and prize draws (designed, not built)
