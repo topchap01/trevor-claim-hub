@@ -19,6 +19,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
 - [x] Next mechanics: prize draw first, then instant win (Mark, 31 Oct 2026; decisions.md #13).
 - [ ] Where gift with purchase sits in that order.
+- [x] Emails: automatic and standard for every campaign, no staff-written or hand-sent emails (Mark, 31 Oct 2026; decisions.md #14).
 - [ ] Sandbox web address `trevor-claim-hub-test.vercel.app` is open to anyone (Vercel SSO covers only preview and per-deployment addresses). Anyone with the address can lodge test claims into Wizard and trigger paid invoice reads. Keep it open for testing and client sign-off, or protect it? (audit, 31 Oct 2026)
 - [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #11).
 
@@ -58,7 +59,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 ## Phase 3: Run every cashback on the hub
 
 - [ ] Staff console covers the day's work without Salesforce screens: approvals, queue, emails, invoice view
-- [ ] Email wording editable by staff (templates out of Apex)
+- [ ] Email templates out of Apex into one standard set kept in this repository, with merge fields, so the builder can preview them and wording changes are reviewed once for every campaign. Never edited per campaign (decisions.md #14).
 - [ ] Client reporting view (read-only, per client)
 - [ ] Nightly reconcile of invoice files; automated retention
 - [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
@@ -70,6 +71,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
      - The draw runs in the hub: secure random, a recorded and repeatable draw, reserve winners, the campaign's own time zone.
      - Winners recorded as `Entry_Win__c` against `Promotional_Campaign_Prize__c`, as today, so reports keep working.
      - Needs the permit check from the go-live gate (phase 4) at the same time, because a draw is a prize promotion.
+     - Winner emails sent automatically from the standard set, one email type per prize type, no per-campaign templates and no hand sending (decisions.md #14). Ships with the standard set above and with campaign logo and colour in emails.
   2. **Instant win:** winning moments drawn and sealed at go-live, awarded under a row lock, result on screen. Reuses the entry, prize and winner records built for the draw.
   - Gift with purchase: position in this order not yet set.
 

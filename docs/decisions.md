@@ -120,10 +120,23 @@ Short records of the choices that shape the code, and what would change them.
   - The old instant-win engine awards by timing rather than by random moment. The first entry after a staff-set window opens wins. It also checks the prize cap without a lock. No prize in production has gone over its cap: 66 capped prizes with wins, checked 31 Oct 2026.
 - Live campaigns stay on these tools (roadmap constraint). Fixing them in production would need Mark's approval.
 
+**14. Every claimant and winner email is automatic and standard. Nothing is written or sent by hand per campaign.** *(Mark, 31 Oct 2026)*
+- *What it replaces:* today each prize campaign gets its own Salesforce email templates, built by hand for each stage. For example, Win a Weber Smokey Everyday 2026 had three, one with "Claim prize by 19/07/26" typed into its subject. Staff then send them one at a time from the entry record. A 500-winner draw would mean 500 hand sends.
+- *How the hub does it:*
+  - **One standard set of emails per mechanic, written once.**
+    - *Cashback:* the existing eight.
+    - *Prize draw and instant win:* entry received, winner, prize details received, prize sent, claim reminder, forfeited, and reserve or unclaimed prize winner, with one version for each prize type (eGift code, physical, cash to bank, experience).
+  - **Every email is triggered by an event, never sent by a person.** It goes through the outbox (#9) from the campaign's own sender address, so each one is recorded with its time, recipient and wording.
+  - **Facts come from the campaign record, never typed into wording.** That covers the prize name, dates, claim deadline and delivery method, so an email can't carry a stale date or the wrong prize. The look comes from the campaign's design (#10): logo and colour.
+  - **Staff do not edit wording, per campaign or otherwise.** The builder shows every email rendered for the campaign at sign-off, as a preview only. If something reads wrong, the campaign data or the terms are fixed, not the email.
+  - **Wording lives in this repository.** A change is reviewed once and applies to every campaign from its next send.
+- *Revisit if* a client contract requires its own wording. Even then, the change goes into the standard set as a variant, not a one-off template.
+- Live campaigns keep their current emails until they end (roadmap constraint). Hand-built winner templates stop with the first prize campaign on the hub.
+
 ## Known follow-ups
 
 - Split `ClaimHubService.lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render` into smaller methods. Code Analyzer flags their complexity. They are fully tested, so the refactor is safe to do.
-- Move email templates out of Apex into Salesforce email templates or custom metadata, so staff can edit wording.
+- Move email templates out of Apex into one standard set kept in this repository (#14). Not editable per campaign.
 - Prize draw, then instant win (#13). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
 - k6 load test script.
 - Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
