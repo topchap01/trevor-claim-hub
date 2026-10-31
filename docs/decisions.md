@@ -106,6 +106,32 @@ Short records of the choices that shape the code, and what would change them.
 - *Accepted risk:* on a shared phone, someone else in the household can open the claim from the bar. The bar names the claimant ("Not Sam? Make a new claim below"), the bank details are masked to the last 3 digits, and changing them needs a code emailed to the claimant. The same exposure already exists through the phone's browser history, which holds the claim link.
 - *Revisit if* a client objects to the shared-phone exposure, or when the claim link moves fully into the cookie (roadmap phase 3).
 
+**13. Electrolux claims collect the full postal address and mobile, plus everything the current Electrolux build collects.** *(Mark, 31 Oct 2026)*
+- *Why (Mark):* future marketing.
+- *What "the current build collects" means,* measured read-only in production on 31 Oct 2026. Like with like: the two one-off Electrolux cashbacks of 2026, not the always-on Better Living GWP.
+
+  | Field | AU Cross Category 2026 (1,708 claims) | NZ Kitchen 2026 (259 claims) | Hub today |
+  |---|---|---|---|
+  | Name, email, mobile | all | all | yes |
+  | Suburb | all | all | no |
+  | Postcode | all | none | no |
+  | State or region | all | all | no |
+  | Street, street number, unit | none | none | no |
+  | Store, from the retailer list | 2,175 of 2,176 receipts | 390 of 390 | no (free text only) |
+  | Store suburb | 2,175 of 2,176 | 390 of 390 | no |
+  | Store state | 2,175 of 2,176 | none | no |
+  | Invoice date | all receipts | all receipts | yes |
+  | Model, price per appliance | 4,518 and 4,523 of 4,523 | all 675 | yes |
+  | PNC and serial | 3,303 and 3,306 of 4,523 | 621 of 675 | optional |
+  | Terms tick | all | all | yes |
+  | Electrolux data consent tick | ticked on none | ticked on none | no |
+
+- *So the hub adds,* on Electrolux campaigns: unit, street number, street, suburb, postcode and state or region; the store picked from the retailer list, with its suburb and (AU) state. Street address is new: the current forms have not collected it.
+- *Where it goes:* the fields the C4C feed (`BambooElectroluxPromotionClaimService`) already reads, so Electrolux receives it without changes to that class: `Consumer_Unit_No__c`, `Consumer_Street_Number__c`, `Consumer_Street_Stamp__c`, `Consumer_Suburb__c`, `Consumer_PostalCode_Stamp__c`, `Consumer_State_Stamp__c` on the Entry; `Retailer__c`, `Retailer_Suburb__c`, `Retailer_State__c` on the receipt. On NZ claims the mobile also goes to `Consumer_Contact_Number__c`, as the old forms do. State and region values must match `State_Mapping__mdt` (for example `NSW`, `Auckland`), or C4C receives no state or country.
+- *Marketing needs consent, which the current build does not capture.* `By_continuing_you_agree_to_Electrolux_s__c` was unticked on all 4,125 Electrolux claims in the last 180 days, so C4C has been sending `dataProtectionConsent: N` on every claim. Collecting an address does not by itself allow it to be used for marketing. The opt-in wording and who it names (Electrolux, Trevor or both) stay with Mark (production-checklist.md, *Consent wording*).
+- *Not decided here:* gender and age; whether PNC is compulsory; when hub claims are sent to C4C. All three stay open in roadmap.md.
+- *Revisit if* Electrolux takes C4C data by API (decisions.md #1a) and its own schema asks for something else.
+
 ## Known follow-ups
 
 - Split `ClaimHubService.lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render` into smaller methods. Code Analyzer flags their complexity. They are fully tested, so the refactor is safe to do.
