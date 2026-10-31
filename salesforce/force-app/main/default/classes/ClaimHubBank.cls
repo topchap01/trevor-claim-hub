@@ -101,7 +101,9 @@ public without sharing class ClaimHubBank {
         if (r != null) {
             out.bankName = r.Bank_Name__c;
             out.branchName = r.Branch_Name__c;
-            if (r.Payments__c != null && !r.Payments__c.contains('E')) {
+            if (closed(r)) {
+                out.review = 'BSB ' + shown + ' is listed as closed in the AusPayNet BSB directory';
+            } else if (r.Payments__c != null && !r.Payments__c.contains('E')) {
                 out.review = 'BSB ' + shown + ' does not take electronic payments (AusPayNet BSB directory)';
             }
         } else if (registerLoaded('AU')) {
@@ -124,7 +126,13 @@ public without sharing class ClaimHubBank {
         Hub_Bank_Branch__c r = find(cc == 'NZ' ? 'NZ-' + code.left(2) + '-' + code.right(4) : 'AU-' + code.left(3) + '-' + code.right(3));
         if (r == null) return new Map<String, Object>{ 'found' => false, 'registerLoaded' => registerLoaded(cc) };
         Boolean electronic = cc != 'AU' || r.Payments__c == null || r.Payments__c.contains('E');
-        return new Map<String, Object>{ 'found' => true, 'bankName' => r.Bank_Name__c, 'branchName' => r.Branch_Name__c, 'electronic' => electronic };
+        return new Map<String, Object>{ 'found' => true, 'bankName' => r.Bank_Name__c, 'branchName' => r.Branch_Name__c, 'electronic' => electronic,
+            'closed' => cc == 'AU' && closed(r) };
+    }
+
+    /** AusPayNet keeps closed BSBs in the directory with the branch name "Closed" (39 of 17,266 rows, November 2026). */
+    static Boolean closed(Hub_Bank_Branch__c r) {
+        return r.Branch_Name__c != null && r.Branch_Name__c.trim().equalsIgnoreCase('Closed');
     }
 
     // ---------------------------------------------------------------- registers

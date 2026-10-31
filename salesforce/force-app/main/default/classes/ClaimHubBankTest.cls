@@ -15,7 +15,8 @@ private class ClaimHubBankTest {
         insert new List<Hub_Bank_Branch__c>{
             row('NZ-12-3140', 'ASB Bank', 'Test Branch', null),
             row('AU-062-000', 'Commonwealth Bank of Australia', 'Test Branch', 'PEH'),
-            row('AU-062-001', 'Commonwealth Bank of Australia', 'Paper Only Branch', 'P') };
+            row('AU-062-001', 'Commonwealth Bank of Australia', 'Paper Only Branch', 'P'),
+            row('AU-062-002', 'Commonwealth Bank of Australia', 'Closed', 'PEH') };
         ClaimHubBank.forget();
     }
 
@@ -102,6 +103,14 @@ private class ClaimHubBankTest {
         System.assertEquals(1, flags(unlisted), 'BSB not in the directory');
     }
 
+    @isTest static void auBsbListedAsClosedIsFlagged() {
+        loadRegisters();
+        ClaimHubBank.Check chk = ClaimHubBank.au('062002');
+        System.assert(chk.review != null && chk.review.contains('closed'), 'closed BSB: ' + chk.review);
+        System.assertEquals(true, ClaimHubBank.lookup('AU', '062002').get('closed'));
+        System.assertEquals(false, ClaimHubBank.lookup('AU', '062000').get('closed'));
+    }
+
     @isTest static void auBsbWithNoElectronicPaymentsIsFlagged() {
         loadRegisters();
         ClaimHubTestFactory.campaign('AU', null);
@@ -145,6 +154,6 @@ private class ClaimHubBankTest {
         loadRegisters();
         Map<String, Object> rows = (Map<String, Object>) ClaimHubMonitor.snapshot().get('bankRegisterRows');
         System.assertEquals(1, rows.get('NZ'));
-        System.assertEquals(2, rows.get('AU'));
+        System.assertEquals(3, rows.get('AU'));
     }
 }

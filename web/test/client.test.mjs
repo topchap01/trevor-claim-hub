@@ -49,6 +49,9 @@ test('bankLine: names the bank, warns when it is unknown, quiet without a regist
   assert.deepEqual(bankLine('NZ', { found: true, bankName: 'ASB Bank', branchName: 'Queen Street', electronic: true }), { ok: true, text: 'ASB Bank, Queen Street' });
   assert.equal(bankLine('AU', { found: true, bankName: 'Example Bank', branchName: 'Paper', electronic: false }).ok, false);
   assert.equal(bankLine('NZ', { found: false, registerLoaded: true }).ok, false);
+  const closed = bankLine('AU', { found: true, bankName: 'CBA', branchName: 'Closed', electronic: true, closed: true });
+  assert.equal(closed.ok, false);
+  assert.match(closed.text, /listed as closed/);
   assert.equal(bankLine('NZ', { found: false, registerLoaded: false }), null);
   assert.equal(bankLine('AU', null), null);
 });

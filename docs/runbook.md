@@ -59,9 +59,13 @@ The health route reports these counts:
 5. Create the campaign. Open the claim page and run one test claim.
 
 **Refresh the bank registers** monthly, after AusPayNet's update on the first NSW business day, and after a sandbox refresh:
-1. Download the Payments NZ Bank Branch Register (.xlsx) and the AusPayNet BSB directory, full version (.txt), plus its *Key to Abbreviations* (.csv).
-2. Run `node scripts/load-bank-register.mjs --org <org> --nz <register>.xlsx --au BSBDirectoryFull.txt --au-key <key>.csv`. Add `--dry-run` first to check the row counts.
-3. It upserts every row, then deletes rows the registers no longer list. It stops without changing anything if a file has suspiciously few rows. Production needs `--approved-for-production`.
+1. Download:
+   - the Payments NZ Bank Branch Register, as CSV, from paymentsnz.co.nz (Resources, Industry registers, Bank Branch Register);
+   - the AusPayNet BSB directory, full version, as CSV, from auspaynet.com.au/BSBLinks;
+   - optionally, AusPayNet's *Key to Abbreviations* CSV from the same page. Without it the form shows the bank's short code (CBA) instead of its name.
+2. Replace the files in `data/bank-registers/` (names in that folder's README) on a branch, open a pull request and merge it.
+3. The merge runs the **Load bank registers (Wizard)** GitHub job. It checks the files, signs in to Wizard, upserts every row, deletes rows the registers no longer list, then checks Salesforce holds exactly the rows in the files. The row counts appear on the job's summary page. To reload without new files (after a sandbox refresh), run the job by hand from the Actions tab.
+4. The job stops without changing anything if a file has suspiciously few rows. It loads Wizard only; production needs Mark's approval and `--approved-for-production` (production-checklist.md).
 
 **Schedule background jobs** after a deploy or sandbox refresh:
 
