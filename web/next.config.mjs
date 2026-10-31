@@ -14,6 +14,8 @@ const csp = [
 
 const nextConfig = {
   poweredByHeader: false,
+  // Campaign designs are read from disk at request time (lib/designs.js), so they ship with the functions
+  outputFileTracingIncludes: { '/**': ['./designs/**/*'] },
   async headers() {
     return [{
       source: '/:path*',

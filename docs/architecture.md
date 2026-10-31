@@ -44,6 +44,32 @@ The cost is one integration user and one more deployment. See [decisions.md](dec
    - Refusals that still need the team's attention, such as a duplicate or second-quality serial, are recorded after the rollback.
    - Unexpected errors go to Nebula Logger. The caller gets only a reference id.
 
+## Campaign designs
+
+Each campaign has its own look (decisions.md #10). A design is a folder named after the campaign slug:
+
+| File | What it is |
+|---|---|
+| `page.html` | The entry page, from the studio. `<hub-slot name="...">` marks where the hub's own blocks go: `claim-form`, `resend`, `how-it-works`, `tiers`, `key-dates`, `terms`. If the page has no `claim-form` slot, the form is added at the end. |
+| `style.css` | The page's styles. |
+| `theme.json` | Colours, font, logo, favicon. Also used on the private claim page (`/c`), which finds the campaign from the claim link. |
+| images, fonts | Referenced by file name only, served from `/designs/<slug>/<file>`. |
+
+`{{placeholders}}` in the page are filled from the campaign record (`name`, `headline`, `brandName`, `retailers`, `supportEmail`, `purchaseFrom`, `purchaseTo`, `claimsClose`, `minSpend`, `maxCashback`). Dates and amounts on the page therefore always match the rules the engine applies. Dates should not be baked into banner images.
+
+Designs are treated as untrusted (`web/lib/designs.js`):
+- scripts, event handlers, frames, forms and inline `<style>` are removed;
+- images, fonts and `url()` may only point at the design's own files;
+- links may only be `https:`, `mailto:`, `tel:` or anchors.
+
+The same page takes bank details, so none of these can be switched off per campaign.
+
+Where designs live:
+- *Sandbox:* `web/designs/<slug>/`, shipped with the web app.
+- *Production:* the public asset store, uploaded by staff from the console (roadmap, Phase 2).
+
+The loader is the only code that changes when designs move to the asset store.
+
 ## Salesforce classes
 
 | Class | Job |

@@ -1,0 +1,56 @@
+<header class="aeg-nav">
+  <nav aria-label="Promotion">
+    <a href="#enter">Entry form</a>
+    <a href="#how">How to claim</a>
+    <a href="#terms">T&amp;Cs</a>
+  </nav>
+</header>
+
+<section class="aeg-hero">
+  <img src="banner.webp" width="1380" height="563" alt="AEG Cashback. Up to {{maxCashback}} when you purchase 3 or more participating AEG appliances. Via redemption.">
+  <div class="aeg-period">
+    <p class="aeg-period-label">Promo period:</p>
+    <p class="aeg-period-dates">{{purchaseFrom}} to {{purchaseTo}}</p>
+    <p class="aeg-period-note">*Minimum spend of {{minSpend}} to qualify. Conditions apply.</p>
+  </div>
+</section>
+
+<section id="enter" class="aeg-enter">
+  <p class="aeg-lead">Please fill out the below form to enter</p>
+  <hub-slot name="claim-form"></hub-slot>
+  <hub-slot name="resend"></hub-slot>
+</section>
+
+<section id="how" class="aeg-section">
+  <h2 class="aeg-h2">How to claim</h2>
+  <hub-slot name="how-it-works"></hub-slot>
+  <hub-slot name="key-dates"></hub-slot>
+</section>
+
+<section id="terms" class="aeg-section">
+  <h2 class="aeg-h2">T&amp;Cs</h2>
+  <hub-slot name="terms"></hub-slot>
+</section>
+
+<footer class="aeg-footer">
+  <div class="aeg-footer-inner">
+    <p class="aeg-footer-terms">Promotional Period: {{purchaseFrom}} to {{purchaseTo}}. Claims close {{claimsClose}}. 1 entry permitted per person/per household. Cashback awarded as an Electronic Funds Transfer (EFT) payment into a nominated New Zealand bank account. The Promoter is Electrolux (NZ) Ltd, NZBN 9429040794860 of 3 Niall Burgess Road, Mount Wellington Auckland 1060.</p>
+    <div class="aeg-footer-row">
+      <img src="logo.png" width="150" height="57" alt="AEG">
+      <div class="aeg-social">
+        <h4>AEG</h4>
+        <ul>
+          <li><a href="https://www.aegnewzealand.co.nz/" target="_blank">Website</a></li>
+          <li><a href="https://www.facebook.com/aegappliancesanz" target="_blank">Facebook</a></li>
+          <li><a href="https://www.instagram.com/aeg_anz/" target="_blank">Instagram</a></li>
+          <li><a href="https://www.youtube.com/channel/UCtR_ju_-uw-7jmzQrS-cTCQ" target="_blank">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="aeg-contact">
+      <h4>Contact the AEG Team today</h4>
+      <p class="aeg-phone"><a href="tel:0800436245">0800 436 245</a></p>
+      <a class="aeg-email" href="mailto:{{supportEmail}}">Email us</a>
+    </div>
+  </div>
+</footer>

@@ -56,7 +56,7 @@ export default function Hub() {
 
   return (
     <main>
-      <section className="hubhead" style={{ background: c.brandColor || undefined }}>
+      <section className="hubhead" style={{ background: c.brandColor ? `var(--campaign-brand, ${c.brandColor})` : undefined }}>
         <div className="inner">
           <p className="eyebrow">{c.campaign} · Claim {c.claimNumber}</p>
           <div className="amt">{money(c.cashback, c.country)} cashback</div>

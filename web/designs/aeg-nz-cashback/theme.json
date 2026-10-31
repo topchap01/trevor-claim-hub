@@ -1,0 +1,17 @@
+{
+  "title": "AEG NZ Cashback",
+  "colors": {
+    "brand": "#00053D",
+    "brandInk": "#FFFFFF",
+    "accent": "#CF132F",
+    "button": "#CF132F",
+    "buttonInk": "#FFFFFF",
+    "bg": "#FFFFFF",
+    "ink": "#1A1A1A"
+  },
+  "font": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",
+  "logo": "logo.png",
+  "logoAlt": "AEG",
+  "favicon": "favicon-32.png",
+  "appleIcon": "apple-touch-icon.png"
+}
