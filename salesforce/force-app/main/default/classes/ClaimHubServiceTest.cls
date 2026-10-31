@@ -212,6 +212,10 @@ private class ClaimHubServiceTest {
         System.assertEquals('NSW', e.Consumer_State_Stamp__c);
         System.assertEquals('Australia', e.Consumer_Country_Stamp__c);
         System.assertEquals(null, e.Consumer_Contact_Number__c, 'AU claims keep the mobile in the mobile stamp');
+        Lead l = [SELECT Unit_No__c, Street_Number__c, Street__c, Suburb__c, Postal_Code__c, State_Territory__c, Country__c FROM Lead WHERE Id IN (SELECT Customer__c FROM Entry__c WHERE Access_Token__c = :token)];
+        System.assertEquals('NSW', l.State_Territory__c, 'AU state on the Lead where the old AU forms put it');
+        System.assertEquals('12', l.Street_Number__c);
+        System.assertEquals('2000', l.Postal_Code__c);
         Entry_Receipt__c rec = [SELECT Retailer__c, Retailer_Suburb__c, Retailer_State__c, Store_Name__c, Hub_Has_File__c FROM Entry_Receipt__c WHERE Entry__r.Access_Token__c = :token];
         System.assertEquals('The Good Guys', rec.Retailer__c, 'spelt as on the list');
         System.assertEquals('Testville', rec.Retailer_Suburb__c);
@@ -237,7 +241,7 @@ private class ClaimHubServiceTest {
         Promotional_Campaign__c c = collecting('NZ', null);
         Map<String, Object> pub = ClaimHubService.publicCampaign(ClaimHubTestFactory.SLUG);
         System.assertEquals(new List<String>{ 'Harvey Norman', 'Other' }, pub.get('stores'), 'falls back to the eligible retailers');
-        System.assertEquals(17, ((List<Object>) pub.get('regions')).size());
+        System.assertEquals(16, ((List<Object>) pub.get('regions')).size());
 
         Map<String, Object> r = withAddress(ClaimHubTestFactory.claimRequest(c.Id, 'nzaddr@example.com', 1, false, 'NZ'), 'NSW');
         r.put('store', new Map<String, Object>{ 'retailer' => 'Other', 'name' => 'Example Appliances', 'suburb' => 'Testtown' });
@@ -249,6 +253,10 @@ private class ClaimHubServiceTest {
         System.assertEquals('Hawke\'s Bay', e.Consumer_State_Stamp__c);
         System.assertEquals('New Zealand', e.Consumer_Country_Stamp__c);
         System.assertEquals(e.Consumer_Mobile_Stamp__c, e.Consumer_Contact_Number__c, 'the NZ number C4C sends');
+        Lead l = [SELECT Town_City__c, State_Territory__c, Country__c FROM Lead WHERE Id IN (SELECT Customer__c FROM Entry__c WHERE Access_Token__c = :token)];
+        System.assertEquals('Hawke\'s Bay', l.Town_City__c, 'NZ region on the Lead where the old NZ forms put it');
+        System.assertEquals(null, l.State_Territory__c);
+        System.assertEquals('New Zealand', l.Country__c);
         Entry_Receipt__c rec = [SELECT Retailer__c, Store_Name__c, Retailer_Suburb__c, Retailer_State__c FROM Entry_Receipt__c WHERE Entry__r.Access_Token__c = :token];
         System.assertEquals('Other', rec.Retailer__c);
         System.assertEquals('Example Appliances', rec.Store_Name__c);
@@ -272,11 +280,14 @@ private class ClaimHubServiceTest {
         System.assertEquals('INV-1', rec.Receipt_Number__c, 'invoice details share the one receipt');
     }
 
-    @isTest static void refusesAMissingOrWrongAddressOrStore() {
-        Promotional_Campaign__c c = collecting('AU', 'Harvey Norman');
+    static Map<String, Object> goodCollectingRequest(Promotional_Campaign__c c) {
         Map<String, Object> ok = withAddress(ClaimHubTestFactory.claimRequest(c.Id, 'bad@example.com', 1, false, 'AU'), 'QLD');
         ok.put('store', new Map<String, Object>{ 'retailer' => 'Harvey Norman', 'suburb' => 'Testville', 'state' => 'QLD' });
+        return ok;
+    }
 
+    @isTest static void refusesAMissingOrWrongAddress() {
+        Map<String, Object> ok = goodCollectingRequest(collecting('AU', 'Harvey Norman'));
         Map<String, Object> r = ok.clone(); r.remove('address');
         System.assertEquals(400, refusal(r), 'no address');
         for (String k : new List<String>{ 'streetNumber', 'street', 'suburb', 'postcode', 'state' }) {
@@ -284,6 +295,7 @@ private class ClaimHubServiceTest {
             Map<String, Object> a = ((Map<String, Object>) ok.get('address')).clone(); a.remove(k); r.put('address', a);
             System.assertEquals(400, refusal(r), 'missing ' + k);
         }
+        Test.startTest(); // fresh limits: each refusal runs the earlier checks again
         r = ok.clone(); Map<String, Object> a = ((Map<String, Object>) ok.get('address')).clone(); a.put('postcode', '20000'); r.put('address', a);
         System.assertEquals(400, refusal(r), 'postcode too long');
         a = a.clone(); a.put('postcode', 'ABCD'); r.put('address', a);
@@ -292,13 +304,20 @@ private class ClaimHubServiceTest {
         System.assertEquals(400, refusal(r), 'state not from the list');
         a = ((Map<String, Object>) ok.get('address')).clone(); a.put('street', 'x'.repeat(121)); r.put('address', a);
         System.assertEquals(400, refusal(r), 'street too long');
+        System.assertEquals(0, [SELECT COUNT() FROM Entry__c], 'nothing saved by a refusal');
+        System.assertEquals(200, refusal(ok));
+        Test.stopTest();
+    }
 
-        r = ok.clone(); r.remove('store');
+    @isTest static void refusesAMissingOrWrongStore() {
+        Map<String, Object> ok = goodCollectingRequest(collecting('AU', 'Harvey Norman'));
+        Map<String, Object> r = ok.clone(); r.remove('store');
         System.assertEquals(400, refusal(r), 'no store');
         r = ok.clone(); r.put('store', new Map<String, Object>{ 'retailer' => 'Some Other Shop', 'suburb' => 'Testville', 'state' => 'QLD' });
         System.assertEquals(400, refusal(r), 'store not on the list');
         r = ok.clone(); r.put('store', new Map<String, Object>{ 'retailer' => 'Other', 'suburb' => 'Testville', 'state' => 'QLD' });
         System.assertEquals(400, refusal(r), 'Other without a name');
+        Test.startTest(); // fresh limits
         r = ok.clone(); r.put('store', new Map<String, Object>{ 'retailer' => 'Harvey Norman', 'state' => 'QLD' });
         System.assertEquals(400, refusal(r), 'no store suburb');
         r = ok.clone(); r.put('store', new Map<String, Object>{ 'retailer' => 'Harvey Norman', 'suburb' => 'Testville' });
@@ -306,8 +325,7 @@ private class ClaimHubServiceTest {
         r = ok.clone(); r.put('store', new Map<String, Object>{ 'retailer' => 'Harvey Norman', 'suburb' => 'Testville', 'state' => 'XX' });
         System.assertEquals(400, refusal(r), 'store state not from the list');
         System.assertEquals(0, [SELECT COUNT() FROM Entry__c], 'nothing saved by a refusal');
-
-        System.assertEquals(200, refusal(ok));
+        Test.stopTest();
     }
 
     @isTest static void campaignsThatDontAskIgnoreAddressAndStore() {

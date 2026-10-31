@@ -76,10 +76,9 @@ public without sharing class ClaimHubService {
     public static final List<String> AU_STATES = new List<String>{ 'ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA' };
     static final List<String> AU_STATE_NAMES = new List<String>{ 'Australian Capital Territory', 'New South Wales', 'Northern Territory',
         'Queensland', 'South Australia', 'Tasmania', 'Victoria', 'Western Australia' };
-    /** NZ regions, spelt as in State_Mapping__mdt, so C4C can map them to a region code. */
+    /** NZ regions: the active values of Lead.Town_City__c, spelt as in State_Mapping__mdt so C4C can map them to a region code. */
     public static final List<String> NZ_REGIONS = new List<String>{ 'Northland', 'Auckland', 'Waikato', 'Bay of Plenty', 'Gisborne', 'Hawke\'s Bay',
-        'Taranaki', 'Manawatu-Whanganui', 'Wellington', 'Tasman', 'Nelson', 'Marlborough', 'West Coast', 'Canterbury', 'Otago', 'Southland',
-        'Chatham Islands Territory' };
+        'Taranaki', 'Manawatu-Whanganui', 'Wellington', 'Tasman', 'Nelson', 'Marlborough', 'West Coast', 'Canterbury', 'Otago', 'Southland' };
     public static final String OTHER_STORE = 'Other';
 
     /** States (AU) or regions (NZ) for the form: value is what is stored, label is what the claimant sees. */
@@ -116,7 +115,7 @@ public without sharing class ClaimHubService {
         return s;
     }
 
-    /** Checks the postal address and writes it where the weekly reports and the C4C feed read it. */
+    /** Checks the postal address and holds it on an unsaved Entry, in the stamps the weekly reports and the C4C feed read. */
     static void applyAddress(Entry__c e, Map<String, Object> req, Promotional_Campaign__c c) {
         if (!(req.get('address') instanceof Map<String, Object>)) throw new HubException(400, 'Please add your postal address.');
         Map<String, Object> a = (Map<String, Object>) req.get('address');
@@ -136,6 +135,24 @@ public without sharing class ClaimHubService {
         e.Consumer_PostalCode_Stamp__c = postcode;
         e.Consumer_State_Stamp__c = state;
         e.Consumer_Country_Stamp__c = nz ? 'New Zealand' : 'Australia';
+    }
+
+    static final List<String> ADDRESS_STAMPS = new List<String>{ 'Consumer_Unit_No__c', 'Consumer_Street_Number__c', 'Consumer_Street_Stamp__c',
+        'Consumer_Suburb__c', 'Consumer_PostalCode_Stamp__c', 'Consumer_State_Stamp__c', 'Consumer_Country_Stamp__c' };
+
+    static void addressToLead(Lead l, Entry__c a, String countryValue) {
+        l.Unit_No__c = a.Consumer_Unit_No__c; l.Street_Number__c = a.Consumer_Street_Number__c; l.Street__c = a.Consumer_Street_Stamp__c;
+        l.Suburb__c = a.Consumer_Suburb__c; l.Postal_Code__c = a.Consumer_PostalCode_Stamp__c; l.Country__c = a.Consumer_Country_Stamp__c;
+        if (country(countryValue) == 'NZ') l.Town_City__c = a.Consumer_State_Stamp__c; else l.State_Territory__c = a.Consumer_State_Stamp__c;
+    }
+
+    /** The trigger maps two Lead fields onto Consumer_State_Stamp__c, so the saved stamps are checked and put right if the mapping lost one. */
+    static void keepAddress(Id entryId, Entry__c a) {
+        Entry__c saved = Database.query('SELECT ' + String.join(ADDRESS_STAMPS, ', ') + ' FROM Entry__c WHERE Id = :entryId');
+        Entry__c fix = new Entry__c(Id = entryId);
+        Boolean differs = false;
+        for (String f : ADDRESS_STAMPS) if (saved.get(f) != a.get(f)) { fix.put(f, a.get(f)); differs = true; }
+        if (differs) update fix;
     }
 
     /** Checks where the claimant bought and returns the receipt fields the C4C feed reads (Retailer__c, Retailer_Suburb__c, Retailer_State__c). */
@@ -293,6 +310,9 @@ public without sharing class ClaimHubService {
 
         Lead l = new Lead(FirstName = first, LastName = last, Email = email, MobilePhone = mobile, Company = 'None');
         if (country(c.Hub_Country__c) == 'NZ') l.Contact_Number__c = mobile;
+        // The legacy EntryCreation trigger copies the address from the Lead onto the Entry (Lead_To_Entry_Mapping__mdt),
+        // so it goes on the Lead in the fields the old forms use: State_Territory__c for an AU state, Town_City__c for an NZ region
+        if (c.Hub_Collect_Address__c) addressToLead(l, address, c.Hub_Country__c);
         Map<String, Object> bank = (Map<String, Object>) req.get('bank');
         ClaimHubBank.Check bankCheck = bank != null ? applyBank(l, bank, c.Hub_Country__c) : null;
         insert l;
@@ -310,14 +330,6 @@ public without sharing class ClaimHubService {
             I_have_read_and_accepted_the_promotion__c = true,
             Hub_Dedupe_Key__c = hash(c.Id + ':' + email), Hub_Mobile_Key__c = mobileKey(mobile),
             Hub_Client_IP_Hash__c = ipHash, Access_Token__c = ClaimAccessToken.newToken());
-        if (c.Hub_Collect_Address__c) {
-            e.Consumer_Unit_No__c = address.Consumer_Unit_No__c; e.Consumer_Street_Number__c = address.Consumer_Street_Number__c;
-            e.Consumer_Street_Stamp__c = address.Consumer_Street_Stamp__c; e.Consumer_Suburb__c = address.Consumer_Suburb__c;
-            e.Consumer_PostalCode_Stamp__c = address.Consumer_PostalCode_Stamp__c; e.Consumer_State_Stamp__c = address.Consumer_State_Stamp__c;
-            e.Consumer_Country_Stamp__c = address.Consumer_Country_Stamp__c;
-        }
-        // The C4C feed sends Consumer_Contact_Number__c as the mobile on NZ claims, as the old NZ forms set it
-        if (country(c.Hub_Country__c) == 'NZ') e.Consumer_Contact_Number__c = mobile;
         // Same stamps the old entry trigger sets (it only finds campaigns by record type): weekly reports and the C4C feed read them
         if (e.Created_At_Datetime__c == null) {
             e.Created_At_Datetime__c = now;
@@ -330,6 +342,7 @@ public without sharing class ClaimHubService {
             if (ex.getDmlType(0) == StatusCode.DUPLICATE_VALUE) throw new HubException(409, DUPLICATE_EMAIL).withCode('duplicate_email');
             throw ex;
         }
+        if (c.Hub_Collect_Address__c) keepAddress(e.Id, address);
 
         List<Entry_Product__c> eps = new List<Entry_Product__c>();
         Set<String> seen = new Set<String>();
