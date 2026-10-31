@@ -41,7 +41,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 
 ## Testing gaps
 
-- [ ] **CI does not run Apex tests.** The `SF_SANDBOX_*` repository secrets are not set, so the "validate deploy and run tests in the sandbox" job passes with the warning *Apex tests not run*. Every pull request so far, including #4 (returning claimants), has relied on someone running `scripts/run-apex-tests.sh wizard` by hand. Set the secrets (a CI connected app in Wizard with JWT bearer) so the job actually deploys and tests.
+- [x] **CI runs the Apex tests** in Wizard on every pull request and push to `main` (from 31 Oct 2026; secrets set by Mark, CI user pre-authorised in #7). A green Salesforce job now means the hub deployed and its tests passed in Wizard.
 - [ ] **Returning claimants (#4) in Wizard, by hand in a phone browser.** Deployed and Apex-tested on 31 Oct 2026 (62 of 62), and the same-mobile flag is confirmed. Still to walk through on the sandbox address: lodge, open the promotion page again (expect "Welcome back"), claim again with the same email (expect the one-tap link), and claim with a new email and the same mobile (expect the review flag in the console).
 
 ## Legacy issues found while testing (not caused by the hub)

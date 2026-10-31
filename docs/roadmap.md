@@ -25,7 +25,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Engine, claim pages, builder, staff console in the sandbox
 - [x] 47 Apex tests, 95% coverage; static analysis clean of high findings; independent review fixes
 - [x] Code on GitHub; Vercel deploys from `main`
-- [ ] **Turn on Apex tests in CI (moved to the top, audit 31 Oct 2026).** CI's Salesforce job shows green but has never deployed or tested Apex: the `SF_SANDBOX_*` secrets are not set, so it exits with a warning. Needs a CI deploy user and External Client App in Wizard (not the claim hub integration user) and the three secrets in GitHub. Until then, run `scripts/run-apex-tests.sh wizard` by hand before every merge that touches `salesforce/`. The CI job also needs #6 merged first: without it, `ClaimHubDispatchJob` (60%) and `ClaimHubLog` (56%) fall under the 75% each class needs and the deploy is refused.
+- [x] **Apex tests run in CI (31 Oct 2026).** `SF_SANDBOX_*` secrets set (Mark) and the CI user pre-authorised on the Claim Hub CI app in Wizard (#7). First real run, on #7: signed in to Wizard, check-only deploy, 62 of 62 tests pass (deploy ID 0Af9p00000ZhnxNCAR). CI signs in as Mark's Wizard admin user; a dedicated CI user would be tidier before Nas starts.
 - [x] Apex for #3 (bank checks), #4 (returning claimants) and #6 (coverage fix) deployed to Wizard together, 62 of 62 tests passing, claim journey passing on all three campaigns (31 Oct 2026). **Wizard is now ahead of `main`.**
 - [x] Merged #6, #3 and #4 to `main` (31 Oct 2026). Wizard and `main` match again.
 - [ ] Replace the sandbox integration key (exposed in a working session; see runbook). Still the original key on 31 Oct 2026.
