@@ -81,4 +81,11 @@ jobs:
         run: |
           sf org display -o ci >/dev/null 2>&1 || { echo "::warning title=Apex tests not run::Not signed in to the sandbox."; exit 0; }
           TESTS=$(ls force-app/main/default/classes/*Test.cls | xargs -n1 basename | sed 's/\.cls$//' | paste -sd, -)
-          sf project deploy validate -o ci -d force-app --test-level RunSpecifiedTests --tests ${TESTS//,/ --tests } --coverage-formatters text --wait 30
+          # Each deploy error and failed test goes on the check as an annotation, so it can be read without the log
+          set +e
+          sf project deploy validate -o ci -d force-app --test-level RunSpecifiedTests --tests ${TESTS//,/ --tests } --coverage-formatters text --wait 30 --json > ../deploy-result.json 2>/dev/null
+          STATUS=$?
+          set -e
+          node ../scripts/deploy-report.mjs < ../deploy-result.json
+          rm -f ../deploy-result.json
+          exit $STATUS
