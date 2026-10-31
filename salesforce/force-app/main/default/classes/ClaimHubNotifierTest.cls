@@ -55,4 +55,21 @@ private class ClaimHubNotifierTest {
         Test.stopTest();
         System.assertEquals('Sent', [SELECT Status__c FROM Claim_Notification__c WHERE Entry__c = :e.Id AND Template_Key__c = 'LODGED'].Status__c);
     }
+
+    @isTest static void anEmailDueLaterWaitsForTheNextRun() {
+        Promotional_Campaign__c c = ClaimHubTestFactory.campaign('AU', null);
+        Entry__c e = ClaimHubTestFactory.entry(ClaimHubTestFactory.lodge(c.Id, 'later@example.com', 1, false, 'AU'));
+        ClaimHubNotifier.addToSummary(e.Id, 'Your invoice');
+        Claim_Notification__c summary = [SELECT Id FROM Claim_Notification__c WHERE Entry__c = :e.Id AND Template_Key__c = 'PROGRESS'];
+        update new Claim_Notification__c(Id = summary.Id, Send_After__c = Datetime.now().addMinutes(5));
+        Test.startTest();
+        System.enqueueJob(new ClaimHubDispatchJob());
+        Test.stopTest();
+        System.assertEquals('Queued', [SELECT Status__c FROM Claim_Notification__c WHERE Id = :summary.Id].Status__c, 'not due yet');
+
+        Datetime now = Datetime.newInstanceGmt(2026, 10, 31, 9, 0, 0);
+        System.assertEquals(1, ClaimHubDispatchJob.delayMinutes(now.addMinutes(-30), now), 'overdue runs as soon as allowed');
+        System.assertEquals(4, ClaimHubDispatchJob.delayMinutes(now.addSeconds(200), now), 'rounded up to whole minutes');
+        System.assertEquals(10, ClaimHubDispatchJob.delayMinutes(now.addMinutes(45), now), 'never waits more than 10 minutes');
+    }
 }
