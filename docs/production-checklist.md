@@ -10,9 +10,9 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] **Consent wording** for Electrolux marketing opt-in, if wanted.
 - [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files.
 - [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
-- [ ] **Vercel plan.** A Pro team is needed for the WAF rate limit, a custom domain on the production project, longer log retention and a DPA.
-- [ ] **Production hub domain**, for example `claims.trevor.services`.
-- [ ] **Confirmation of Payee for batch payments.** Ask Trevor's paying bank whether it is offered on payment file uploads or by API, in NZ and AU (decisions.md #10).
+- [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).
+- [x] **Campaign addresses.** Own domain per campaign, plus a backup on yourpromotion.com.au (decisions.md #10).
+- [ ] **Confirmation of Payee for batch payments.** Ask Trevor's paying bank whether it is offered on payment file uploads or by API, in NZ and AU (decisions.md #11).
 
 ## Salesforce production changes
 
@@ -30,7 +30,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Run `scripts/apex/schedule-jobs.apex`.
 - [ ] Verify org-wide email addresses for each campaign sender, and check deliverability.
 - [ ] Assign `Claim_Hub_Admin` to the claims team.
-- [ ] Load the bank registers into `Hub_Bank_Branch__c` (decisions.md #10): `node scripts/load-bank-register.mjs --org <prod> --nz <Payments NZ .xlsx> --au BSBDirectoryFull.txt --au-key <key>.csv --approved-for-production`. Before the first load:
+- [ ] Load the bank registers into `Hub_Bank_Branch__c` (decisions.md #11): `node scripts/load-bank-register.mjs --org <prod> --nz <Payments NZ .xlsx> --au BSBDirectoryFull.txt --au-key <key>.csv --approved-for-production`. Before the first load:
   - confirm Payments NZ's terms allow the Bank Branch Register to be used this way;
   - check production **data** storage has room for the rows (one per NZ branch and AU BSB; the January 2026 NZ register lists 3,296 branch numbers);
   - load before the first live claim: until a register is loaded, an unknown NZ bank code or AU BSB is neither refused nor flagged;
@@ -51,6 +51,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Environment variables: `SF_LOGIN_URL` (`https://login.salesforce.com` or the My Domain), `SF_AUDIENCE=https://login.salesforce.com`, `SF_USERNAME`, `SF_CLIENT_ID`, `SF_PRIVATE_KEY` (sensitive), and `BLOB_READ_WRITE_TOKEN` (from connecting a production Blob store).
 - [ ] Set `HUB_ENV=production` to remove the sandbox banner. Leave `HUB_HOME_SLUG` unset, so the bare domain shows nothing.
 - [ ] Custom domain and HTTPS.
+- [ ] Content security policy (`web/next.config.mjs`) allows each campaign's images and fonts. Today it allows only the hub's own address.
+- [ ] Live campaign pages indexable by search engines. Today every page sends `noindex`. Claim-status pages (`/c`) stay noindex.
 - [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny.
 - [ ] Uptime monitor on `/api/health`.
 - [ ] Load test before launch: about 2,000 claims a day, with a 10× burst (k6 script, not yet written).

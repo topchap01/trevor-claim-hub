@@ -76,7 +76,7 @@ The loader is the only code that changes when designs move to the asset store.
 |---|---|
 | `ClaimHubApi` | REST router, savepoints, error mapping. |
 | `ClaimHubService` | Campaigns, lodging, the claim view, serials, invoice upload, bank changes, link resend. Also the status engine (`recompute`). |
-| `ClaimHubBank` | Bank detail checks: NZ check digits, and bank, branch and BSB lookups in the registers (decisions.md #10). |
+| `ClaimHubBank` | Bank detail checks: NZ check digits, and bank, branch and BSB lookups in the registers (decisions.md #11). |
 | `ClaimHubInvoice` | Checks an invoice, as read by Claude, against the claim and the rules. Lists problems; never refuses on its own. |
 | `ClaimHubAssistant` | The help chat. Answers from the terms summary and the claim, and hands over to a person. |
 | `ClaimHubVision` | All Claude calls in one place. Fails soft: an outage sends work to the team instead of failing the claimant. |

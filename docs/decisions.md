@@ -31,6 +31,7 @@ Short records of the choices that shape the code, and what would change them.
   - Sydney region.
   - Preview deployments per pull request.
   - Private Blob storage alongside.
+- *Plan:* Pro (Mark, 31 Oct 2026).
 - *Alternative:* any Node host. The app uses no Vercel-only APIs apart from `@vercel/blob`, which sits behind `web/lib/files.js`.
 
 **3. Rules live in Apex; the web app holds no state.**
@@ -70,7 +71,16 @@ Short records of the choices that shape the code, and what would change them.
 
 **9. Emails go through an outbox object, with one dispatcher.** Every email is a record before it is sent, so nothing is lost when sending fails, staff can see what each claimant received, and changes made close together are merged into one email. The dispatcher locks the rows it sends (`FOR UPDATE`, status re-checked). A delayed job only re-queues itself when no other dispatcher is waiting, so overlapping runs never send an email twice and job chains never multiply.
 
-**10. Bank details are checked against published rules and registers: refuse only what can't be paid, flag the rest.** *(Mark, 31 Oct 2026)*
+**10. Each campaign has its own look and feel. Entry pages are not standardised.** (Mark, 31 Oct 2026)
+- Every campaign's consumer pages carry that campaign's own design, as the current microsites do. One template with a swappable colour and logo is not enough.
+- What stays common is the claim engine: rules, checks, the claim record, emails, payments.
+- **How the design is delivered (Mark, 31 Oct 2026): the hub hosts it.** The studio's page (HTML, CSS, images, fonts) is attached to the campaign and served by the hub, with the standard claim form placed where the page marks it. No code deploy per campaign. No scripts are allowed in a design, because the same page takes bank details; the hub strips them.
+- The claim steps (form, private claim page, serials, bank details) stay common to every campaign and take the campaign's colours, fonts and logo from its design.
+- **Addresses (Mark, 31 Oct 2026).** Each campaign is served on its own domain, as now (for example aegcashbackpromo.co.nz), which the builder adds to Vercel. It also gets a backup address on yourpromotion.com.au as soon as it is built, for testing, client sign-off and late DNS. Claim links carry the claim code and campaign, so reusing a domain for a brand's next campaign does not break earlier claims.
+- **Not now (Mark, 31 Oct 2026):** source tags on QR codes for counting claims by channel.
+- *Found while scoping:* the hub's security policy allows images and fonts only from its own address, and every page is marked noindex. Both must change per campaign before go-live (production-checklist.md).
+
+**11. Bank details are checked against published rules and registers: refuse only what can't be paid, flag the rest.** *(Mark, 31 Oct 2026)*
 - *What happens:*
   - **NZ check digit fails** (for a bank with a published check): refused on the form, with a plain message. The claimant is there to fix it, and the number can't be right.
   - **Bank, branch or BSB not in the register:** accepted and flagged for review. A register can lag behind a new bank or branch, so a real account must not be turned away.

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Loads the bank registers the claim hub checks bank details against into Hub_Bank_Branch__c (decisions.md #10).
+// Loads the bank registers the claim hub checks bank details against into Hub_Bank_Branch__c (decisions.md #11).
 //
 //   NZ: Payments NZ Bank Branch Register, the .xlsx (or a .csv saved from it) from
 //       https://www.paymentsnz.co.nz/resources/industry-registers/bank-branch-register/

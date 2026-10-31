@@ -1,5 +1,5 @@
 /**
- * Checks bank details against published rules and registers (decisions.md #10).
+ * Checks bank details against published rules and registers (decisions.md #11).
  *
  * Refuses only a New Zealand account number that fails its bank's check digit: that number can't be right, and the
  * claimant is on the page to fix it. Anything a register can't confirm is accepted and flagged for review instead,

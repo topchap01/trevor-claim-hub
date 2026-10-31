@@ -12,10 +12,12 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] PNC compulsory on Electrolux campaigns?
 - [ ] Collect address, gender and age? (Some weekly reports use them.)
 - [ ] Invoice retention period (suggested: 12 months after payment).
-- [ ] Vercel Pro (needed for commercial use, team members, rate limiting, a custom domain).
+- [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
+- [x] Campaign addresses: the campaign's own domain, plus a backup address on yourpromotion.com.au (decisions.md #10).
+- [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
-- [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #10).
+- [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #11).
 
 ## Phase 1: Developer handover (now)
 
@@ -25,7 +27,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Replace the sandbox integration key (exposed in a working session; see runbook)
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
-- [ ] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #10). Built; merge once the Apex tests pass in Wizard, then load the registers into Wizard.
+- [ ] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #11). Built; merge once the Apex tests pass in Wizard, then load the registers into Wizard.
 
 ## Phase 2: First production campaign
 
@@ -33,6 +35,12 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Production integration user, External Client App and new key pair
 - [ ] Deploy `salesforce/force-app` and the legacy trigger guard to production
 - [ ] Production Vercel project on Pro, custom domain, rate-limit rule, uptime monitor on `/api/health`
+- [ ] Each campaign's own look and feel (decisions.md #10). Needed before the first production campaign, because that campaign must look like its brand, not like the hub.
+  - [x] Designed entry page served by the hub, claim form in place, scripts stripped; proven with AEG NZ in the sandbox (31 Oct 2026, PR #2)
+  - [x] Private claim page, browser tab and icon carry the campaign look (PR #2)
+  - [ ] Staff upload a design to a campaign (console), stored in the public asset store, not Salesforce
+  - [ ] Campaign logo and colour in emails
+- [ ] Campaign addresses: the hub serves each campaign on its own domain and on a yourpromotion.com.au backup address; the builder adds both to Vercel (decisions.md #10). Check how yourpromotion.com.au's DNS is run, since it also carries the existing Experience site.
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
 - [ ] Confirm weekly client reports show hub claims
@@ -61,7 +69,7 @@ The pipeline: **Quentin drafts the terms, the hub reads them and builds the camp
 - [ ] **Branding per client:**
   - their own web address (for example claims.brand.com);
   - an email domain verified for sending;
-  - theme.
+  - each campaign's own look and feel (decisions.md #10; moved forward to Phase 2).
 - [ ] **Tiers.**
   - *Self-serve:* the client approves claims.
   - *Managed:* Trevor approves claims and pays claimants.

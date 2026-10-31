@@ -72,7 +72,7 @@ Each check refuses with a 4xx before anything is saved.
 8. The minimum spend is met.
 9. The serial format is valid, the serial does not start with an excluded prefix, and no serial is entered twice on the form.
 10. The basket reaches a cashback tier.
-11. The bank format is right for the country, and an NZ account number passes its bank's check digit (decisions.md #10).
+11. The bank format is right for the country, and an NZ account number passes its bank's check digit (decisions.md #11).
 
 After saving, these are flagged for the team but not refused:
 - a third or later claim from one connection in 24 hours;
