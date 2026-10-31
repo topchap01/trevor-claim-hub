@@ -80,6 +80,21 @@ Short records of the choices that shape the code, and what would change them.
 - **Not now (Mark, 31 Oct 2026):** source tags on QR codes for counting claims by channel.
 - *Found while scoping:* the hub's security policy allows images and fonts only from its own address, and every page is marked noindex. Both must change per campaign before go-live (production-checklist.md).
 
+**11. Bank details are checked against published rules and registers: refuse only what can't be paid, flag the rest.** *(Mark, 31 Oct 2026)*
+- *What happens:*
+  - **NZ check digit fails** (for a bank with a published check): refused on the form, with a plain message. The claimant is there to fix it, and the number can't be right.
+  - **Bank, branch or BSB not in the register:** accepted and flagged for review. A register can lag behind a new bank or branch, so a real account must not be turned away.
+  - **AU BSB that takes no electronic payments:** accepted and flagged.
+  - **Register found:** the form shows the bank and branch back as the claimant types, so they can see a wrong BSB or bank code before submitting.
+- *Sources:*
+  - NZ check digits: Inland Revenue, Payroll Calculations and Business Rules Specification, section 7. Algorithms A, B, D and F are built. E and G apply only to bank codes the Payments NZ register doesn't list, so those numbers are flagged, not checked. The suffix (account type) is outside every check.
+  - NZ banks and branches: Payments NZ Bank Branch Register.
+  - AU: AusPayNet BSB directory (updated on the first NSW business day of each month). Australian account numbers have no published check digit, so only the BSB is checked.
+- *How it's held:* the registers sit in `Hub_Bank_Branch__c`, loaded monthly by `scripts/load-bank-register.mjs`. With no register loaded, only format and check digit are tested and nothing is flagged for being missing. The health check reports the row counts.
+- *Evidence:* the check accepted all 99 published NZ account numbers in python-stdnum's test set, and caught every single wrong digit and every swap of neighbouring digits in their branch and account numbers (8,901 and 699 variants). Run on 31 Oct 2026; the numbers are not stored in this repository.
+- *Not done:* checking that the account name matches the account. Confirmation of Payee does this (live in NZ banking apps since the 2024-25 rollout, in Australia since July 2025), but in online banking only. We found no evidence it covers batch payment files. Next step is to ask Trevor's paying bank (roadmap).
+- *Revisit if* a bank turns up in the register without a check algorithm we've built, or flagged claims show the register is often out of date.
+
 **12. Returning claimants: make the way back obvious, and remember the claim on the phone.** Decided by Mark, 31 October 2026: whatever is easiest for the least confident claimant.
 - *The problem:* the claim link in the email is the only way into a claim. People lose the email, come back to the promotion page and either fill in the form again or give up.
 - *What the hub does:*

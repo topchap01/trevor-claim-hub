@@ -34,7 +34,7 @@ private class ClaimHubServiceTest {
         String token = ClaimHubTestFactory.lodge(c.Id, 'pct@example.com', 2, true, 'NZ');
         Entry__c e = ClaimHubTestFactory.entry(token);
         System.assertEquals(250, e.Cashback_Amount__c, '15% of 2,000 is 300, capped at 250');
-        System.assertEquals('123140023456700', e.Consumer_Bank_Account_Number__c);
+        System.assertEquals('123140023456600', e.Consumer_Bank_Account_Number__c);
         Map<String, Object> pub = ClaimHubService.publicCampaign(ClaimHubTestFactory.SLUG);
         System.assertEquals('percent', pub.get('tierBasis'));
         System.assertEquals(true, pub.get('needsPrices'));
@@ -88,8 +88,8 @@ private class ClaimHubServiceTest {
     @isTest static void nzBankAccountsAreChecked() {
         Promotional_Campaign__c c = ClaimHubTestFactory.campaign('NZ', null);
         Map<String, Object> r = ClaimHubTestFactory.claimRequest(c.Id, 'nz@example.com', 1, false, 'NZ');
-        r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'account' => '99-3140-0234567-00' });
-        System.assertEquals(400, refusal(r), 'not an NZ bank code');
+        r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'account' => '12-3140-0234567-00' });
+        System.assertEquals(400, refusal(r), 'fails the check digit');
         r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'account' => '12-3140' });
         System.assertEquals(400, refusal(r), 'too short');
         r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'bsb' => '062000', 'account' => '12345678' });

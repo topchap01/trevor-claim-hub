@@ -48,7 +48,7 @@ public class ClaimHubTestFactory {
         for (Integer i = 0; i < count; i++) items.add(new Map<String, Object>{ 'promoProductId' => ps[i].Id, 'price' => '$1,000' });
         Map<String, Object> req = new Map<String, Object>{ 'firstName' => 'Sam', 'lastName' => 'Tester', 'email' => email, 'mobile' => mobileFor(email), 'products' => items, 'acceptedTerms' => true };
         if (withBank) req.put('bank', country == 'NZ'
-            ? new Map<String, Object>{ 'name' => 'S Tester', 'account' => '12-3140-0234567-00' }
+            ? new Map<String, Object>{ 'name' => 'S Tester', 'account' => '12-3140-0234566-00' }
             : new Map<String, Object>{ 'name' => 'S Tester', 'bsb' => '062-000', 'account' => '12345678' });
         return req;
     }
