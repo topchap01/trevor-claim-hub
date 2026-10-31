@@ -11,7 +11,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files.
 - [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
 - [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).
-- [ ] **Campaign addresses.** Each campaign has its own look (decisions.md #10). Decide whether entry pages sit on a Trevor domain, the campaign's own domain, or both, and which Trevor domain.
+- [x] **Campaign addresses.** Own domain per campaign, plus a backup on yourpromotion.com.au (decisions.md #10).
 
 ## Salesforce production changes
 

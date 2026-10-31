@@ -13,8 +13,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Collect address, gender and age? (Some weekly reports use them.)
 - [ ] Invoice retention period (suggested: 12 months after payment).
 - [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
-- [ ] Campaign addresses: how each campaign's entry page is addressed (Trevor domain, the campaign's own domain, or both) and which Trevor domain. See decisions.md #10.
-- [ ] How each campaign's own look is built and served. See decisions.md #10.
+- [x] Campaign addresses: the campaign's own domain, plus a backup address on yourpromotion.com.au (decisions.md #10).
+- [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
 
@@ -34,7 +34,10 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Deploy `salesforce/force-app` and the legacy trigger guard to production
 - [ ] Production Vercel project on Pro, custom domain, rate-limit rule, uptime monitor on `/api/health`
 - [ ] Each campaign's own look and feel (decisions.md #10). Needed before the first production campaign, because that campaign must look like its brand, not like the hub.
-- [ ] Campaign addresses: the hub serves each campaign on its own address, and the builder adds the domain to Vercel (decisions.md #10)
+  - [ ] Designed entry page served by the hub, claim form in place, scripts stripped; proven with AEG NZ in the sandbox
+  - [ ] Staff upload a design to a campaign (console), stored in the public asset store, not Salesforce
+  - [ ] Campaign logo and colour in emails
+- [ ] Campaign addresses: the hub serves each campaign on its own domain and on a yourpromotion.com.au backup address; the builder adds both to Vercel (decisions.md #10). Check how yourpromotion.com.au's DNS is run, since it also carries the existing Experience site.
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
 - [ ] Confirm weekly client reports show hub claims

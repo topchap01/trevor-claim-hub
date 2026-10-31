@@ -74,7 +74,10 @@ Short records of the choices that shape the code, and what would change them.
 **10. Each campaign has its own look and feel. Entry pages are not standardised.** (Mark, 31 Oct 2026)
 - Every campaign's consumer pages carry that campaign's own design, as the current microsites do. One template with a swappable colour and logo is not enough.
 - What stays common is the claim engine: rules, checks, the claim record, emails, payments.
-- *Still open (roadmap):* how a campaign's design is built and served by the hub, and how its pages are addressed.
+- **How the design is delivered (Mark, 31 Oct 2026): the hub hosts it.** The studio's page (HTML, CSS, images, fonts) is attached to the campaign and served by the hub, with the standard claim form placed where the page marks it. No code deploy per campaign. No scripts are allowed in a design, because the same page takes bank details; the hub strips them.
+- The claim steps (form, private claim page, serials, bank details) stay common to every campaign and take the campaign's colours, fonts and logo from its design.
+- **Addresses (Mark, 31 Oct 2026).** Each campaign is served on its own domain, as now (for example aegcashbackpromo.co.nz), which the builder adds to Vercel. It also gets a backup address on yourpromotion.com.au as soon as it is built, for testing, client sign-off and late DNS. Claim links carry the claim code and campaign, so reusing a domain for a brand's next campaign does not break earlier claims.
+- **Not now (Mark, 31 Oct 2026):** source tags on QR codes for counting claims by channel.
 - *Found while scoping:* the hub's security policy allows images and fonts only from its own address, and every page is marked noindex. Both must change per campaign before go-live (production-checklist.md).
 
 ## Known follow-ups
