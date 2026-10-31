@@ -56,6 +56,8 @@ The health route reports these counts:
 2. Paste the terms or attach the PDF.
 3. Check what was read and every issue raised.
 4. Set the dates and web address name. Optionally compare products with a past campaign.
+   - *Ask for the claimant's postal address* and *Ask which store they bought from* are on for Electrolux and AEG terms (decisions.md #13). Check the list of stores to offer: spell each one as reports should show it (for example `Harvey Norman`, `The Good Guys`). Other is added for you.
+   - These can also be changed later on the campaign record: *Claim Hub Collect Address*, *Claim Hub Collect Store*, *Claim Hub Stores*.
 5. Create the campaign. Open the claim page and run one test claim.
 
 **Refresh the bank registers** monthly, after AusPayNet's update on the first NSW business day, and after a sandbox refresh:

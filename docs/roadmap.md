@@ -51,11 +51,12 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
   - [ ] Campaign logo and colour in emails
 - [ ] Campaign addresses: the hub serves each campaign on its own domain and on a yourpromotion.com.au backup address; the builder adds both to Vercel (decisions.md #10). Check how yourpromotion.com.au's DNS is run, since it also carries the existing Experience site.
 - [ ] Electrolux claim fields (decisions.md #13). Needed before the first Electrolux campaign on the hub. Built as a campaign setting the builder turns on, not hard-coded to Electrolux, so another client can use it:
-  - postal address on the claim form (unit, street number, street, suburb, postcode, state or region), with state and region values that match `State_Mapping__mdt`;
-  - store picked from the retailer list, with store suburb and state;
-  - NZ mobile also written to `Consumer_Contact_Number__c`;
-  - marketing opt-in tick, once Mark settles the wording;
-  - smoke test and Apex tests prove each field reaches the record the C4C feed reads.
+  - [x] postal address on the claim form (unit, street number, street, suburb, postcode, state or region), with state and region values that match `State_Mapping__mdt` (#11);
+  - [x] store picked from the campaign's list, with store suburb and (AU) state (#11);
+  - [x] NZ mobile also written to `Consumer_Contact_Number__c` (#11);
+  - [x] Apex tests prove each field reaches the record the C4C feed reads; the smoke test sends and checks them (#11);
+  - [ ] switch both settings on for the two Electrolux campaigns in Wizard, deploy, and run the smoke test on each;
+  - [ ] marketing opt-in tick, once Mark settles the wording.
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
 - [ ] Confirm weekly client reports show hub claims

@@ -22,7 +22,8 @@ export default class HubCampaignBuilder extends NavigationMixin(LightningElement
     spec;
     sched;
     templateOptions = [];
-    opts = { name: '', slug: '', start: '', end: '', compareCampaignId: '', baseUrl: 'https://trevor-claim-hub-test.vercel.app', sender: '', brandColor: '#111111', termsUrl: '', enable: true };
+    opts = { name: '', slug: '', start: '', end: '', compareCampaignId: '', baseUrl: 'https://trevor-claim-hub-test.vercel.app', sender: '', brandColor: '#111111', termsUrl: '', enable: true,
+        collectAddress: false, collectStore: false, stores: '' };
 
     @wire(templates) wiredTemplates({ data }) { if (data) this.templateOptions = data; }
 
@@ -84,7 +85,10 @@ export default class HubCampaignBuilder extends NavigationMixin(LightningElement
         try {
             this.spec = JSON.parse(await readTerms({ termsText: this.terms, pdfBase64: this.pdfBase64 }));
             const brand = (this.spec.brand || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            this.opts = { ...this.opts, name: this.spec.promotionName, slug: `${brand}-cashback`, start: this.spec.purchaseStart, end: this.spec.purchaseEnd };
+            // Electrolux campaigns collect the postal address and the store, for the C4C feed (decisions.md #13)
+            const electrolux = /electrolux|\baeg\b/i.test(`${this.spec.brand || ''} ${this.spec.promoter || ''}`);
+            this.opts = { ...this.opts, name: this.spec.promotionName, slug: `${brand}-cashback`, start: this.spec.purchaseStart, end: this.spec.purchaseEnd,
+                collectAddress: electrolux, collectStore: electrolux, stores: (this.spec.retailers || []).join('\n') };
             await this.recalc();
         } catch (e) { this.error = this.msg(e); }
         this.busy = false;

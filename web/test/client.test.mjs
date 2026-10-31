@@ -55,3 +55,30 @@ test('bankLine: names the bank, warns when it is unknown, quiet without a regist
   assert.equal(bankLine('NZ', { found: false, registerLoaded: false }), null);
   assert.equal(bankLine('AU', null), null);
 });
+
+test('splitStreet: street number and name, as C4C takes them', async () => {
+  const { splitStreet } = await import('../lib/client.js');
+  assert.deepEqual(splitStreet('12 Example Street'), { unit: '', streetNumber: '12', street: 'Example Street' });
+  assert.deepEqual(splitStreet('  12A   Example  St '), { unit: '', streetNumber: '12A', street: 'Example St' });
+  assert.deepEqual(splitStreet('12 - 14 Example Road'), { unit: '', streetNumber: '12-14', street: 'Example Road' });
+  assert.deepEqual(splitStreet('4/12 Example Street'), { unit: '4', streetNumber: '12', street: 'Example Street' });
+  assert.deepEqual(splitStreet('G02 / 7 Example Lane'), { unit: 'G02', streetNumber: '7', street: 'Example Lane' });
+  assert.deepEqual(splitStreet('Lot 5 Example Road'), { unit: '', streetNumber: 'Lot 5', street: 'Example Road' });
+  assert.deepEqual(splitStreet('12, Example Street'), { unit: '', streetNumber: '12', street: 'Example Street' });
+  assert.equal(splitStreet('Example Street'), null, 'no street number');
+  assert.equal(splitStreet('12'), null, 'no street name');
+  assert.equal(splitStreet(''), null);
+});
+
+test('addressFor: checks the address before it is sent', async () => {
+  const { addressFor } = await import('../lib/client.js');
+  const regions = [{ value: 'NSW', label: 'New South Wales' }];
+  const ok = { line: '4/12 Example Street', unit: '', suburb: 'Testville ', postcode: '2000', state: 'NSW' };
+  assert.deepEqual(addressFor(ok, regions).address, { unit: '4', streetNumber: '12', street: 'Example Street', suburb: 'Testville', postcode: '2000', state: 'NSW' });
+  assert.equal(addressFor({ ...ok, unit: 'Unit 9' }, regions).address.unit, 'Unit 9', 'the unit field wins');
+  assert.match(addressFor({ ...ok, line: '' }, regions).error, /street address/);
+  assert.match(addressFor({ ...ok, line: 'Example Street' }, regions).error, /street number/);
+  assert.match(addressFor({ ...ok, suburb: ' ' }, regions).error, /suburb/);
+  assert.match(addressFor({ ...ok, postcode: '200' }, regions).error, /4 digits/);
+  assert.match(addressFor({ ...ok, state: 'VIC' }, regions).error, /state/);
+});
