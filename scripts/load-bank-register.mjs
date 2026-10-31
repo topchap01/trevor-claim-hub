@@ -163,8 +163,15 @@ export function toCsv(rows) {
 
 // ------------------------------------------------------------------ Salesforce
 
+/** Runs an sf command with --json. On failure, throws Salesforce's own message rather than "Command failed". */
 function sf(args) {
-  return JSON.parse(execFileSync('sf', [...args, '--json'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, env: { ...process.env, SFDX_DISABLE_DNS_CHECK: 'true' } }));
+  try {
+    return JSON.parse(execFileSync('sf', [...args, '--json'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'], env: { ...process.env, SFDX_DISABLE_DNS_CHECK: 'true' } }));
+  } catch (err) {
+    let reason = err.message;
+    try { const j = JSON.parse(err.stdout); reason = [j.name, j.message].filter(Boolean).join(': '); } catch { /* keep the raw message */ }
+    throw new Error(`sf ${args.slice(0, 3).join(' ')} failed: ${reason}`);
+  }
 }
 
 function args(argv) {
@@ -219,6 +226,17 @@ async function main() {
     sf(['data', 'delete', 'bulk', '--sobject', 'Hub_Bank_Branch__c', '--file', ids, '--target-org', a.org, '--wait', '30']);
     console.log(`${c}: deleted ${stale.length} rows the register no longer lists`);
   }
+
+  // Check what Salesforce now holds against the files, so a partly failed bulk job can't pass as a load
+  const counts = Object.fromEntries(sf(['data', 'query', '--target-org', a.org, '--query', 'SELECT Country__c c, COUNT(Id) n FROM Hub_Bank_Branch__c GROUP BY Country__c'])
+    .result.records.map((r) => [r.c, r.n]));
+  let mismatch = false;
+  for (const [c, rows] of Object.entries(byCountry)) {
+    const held = counts[c] ?? 0;
+    console.log(`${c}: ${held} rows in Salesforce, ${rows.length} in the file`);
+    if (held !== rows.length) mismatch = true;
+  }
+  if (mismatch) throw new Error('Salesforce does not hold the same number of rows as the files. Check the bulk job under Setup, Bulk Data Load Jobs.');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

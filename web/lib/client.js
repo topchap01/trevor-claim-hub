@@ -74,6 +74,7 @@ export function bankLine(country, r) {
   if (!r) return null;
   if (r.found) {
     const where = [r.bankName, r.branchName].filter(Boolean).join(', ');
+    if (r.closed) return { ok: false, text: `${where}. This BSB is listed as closed, so please check it against your statement or banking app.` };
     return { ok: r.electronic !== false, text: r.electronic === false ? `${where}. This branch can't receive electronic payments, so please check the BSB.` : where };
   }
   if (!r.registerLoaded) return null;

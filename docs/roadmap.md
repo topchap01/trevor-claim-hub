@@ -32,7 +32,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
 - [x] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #11). Merged and in Wizard (31 Oct 2026).
-- [ ] Load the bank registers into Wizard with `scripts/load-bank-register.mjs` (`--dry-run` first). Until then only format and check digit are tested.
+- [ ] Load the bank registers into Wizard: November 2026 files (3,295 NZ branches, 17,266 AU BSBs) committed in `data/bank-registers/`; the **Load bank registers (Wizard)** GitHub job loads them on merge. Tick once the job's row counts match. Until then only format and check digit are tested.
 
 ## Phase 2: First production campaign
 
