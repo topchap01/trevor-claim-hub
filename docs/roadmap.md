@@ -10,16 +10,18 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 
 - [ ] C4C: send hub claims to Electrolux on lodge, on approval, or only when staff change them (as now)?
 - [ ] PNC compulsory on Electrolux campaigns?
-- [ ] Collect address, gender and age? (Some weekly reports use them.)
+- [x] Address on Electrolux claims: full postal address and mobile, plus everything the current Electrolux build collects (Mark, 31 Oct 2026; decisions.md #13).
+- [ ] Gender and age? (Some weekly reports use them.) Address is decided for Electrolux only; other clients not yet.
+- [ ] Marketing opt-in wording for Electrolux, and whose marketing it covers. Needed before the addresses can be used for marketing: the current forms send "no consent" to C4C on every claim (decisions.md #13).
 - [ ] Invoice retention period (suggested: 12 months after payment).
 - [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
 - [x] Campaign addresses: the campaign's own domain, plus a backup address on yourpromotion.com.au (decisions.md #10).
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
-- [x] Next mechanics: prize draw first, then instant win (Mark, 31 Oct 2026; decisions.md #13).
+- [x] Next mechanics: prize draw first, then instant win (Mark, 31 Oct 2026; decisions.md #14).
 - [ ] Where gift with purchase sits in that order.
-- [x] Emails: automatic and standard for every campaign, no staff-written or hand-sent emails (Mark, 31 Oct 2026; decisions.md #14).
+- [x] Emails: automatic and standard for every campaign, no staff-written or hand-sent emails (Mark, 31 Oct 2026; decisions.md #15).
 - [ ] Sandbox web address `trevor-claim-hub-test.vercel.app` is open to anyone (Vercel SSO covers only preview and per-deployment addresses). Anyone with the address can lodge test claims into Wizard and trigger paid invoice reads. Keep it open for testing and client sign-off, or protect it? (audit, 31 Oct 2026)
 - [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #11).
 
@@ -35,7 +37,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
 - [x] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #11). Merged and in Wizard (31 Oct 2026).
-- [ ] Load the bank registers into Wizard with `scripts/load-bank-register.mjs` (`--dry-run` first). Until then only format and check digit are tested.
+- [ ] Load the bank registers into Wizard: November 2026 files (3,295 NZ branches, 17,266 AU BSBs) committed in `data/bank-registers/`; the **Load bank registers (Wizard)** GitHub job loads them on merge. Tick once the job's row counts match. Until then only format and check digit are tested.
 
 ## Phase 2: First production campaign
 
@@ -51,6 +53,12 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
   - [ ] Staff upload a design to a campaign (console), stored in the public asset store, not Salesforce
   - [ ] Campaign logo and colour in emails
 - [ ] Campaign addresses: the hub serves each campaign on its own domain and on a yourpromotion.com.au backup address; the builder adds both to Vercel (decisions.md #10). Check how yourpromotion.com.au's DNS is run, since it also carries the existing Experience site.
+- [ ] Electrolux claim fields (decisions.md #13). Needed before the first Electrolux campaign on the hub. Built as a campaign setting the builder turns on, not hard-coded to Electrolux, so another client can use it:
+  - postal address on the claim form (unit, street number, street, suburb, postcode, state or region), with state and region values that match `State_Mapping__mdt`;
+  - store picked from the retailer list, with store suburb and state;
+  - NZ mobile also written to `Consumer_Contact_Number__c`;
+  - marketing opt-in tick, once Mark settles the wording;
+  - smoke test and Apex tests prove each field reaches the record the C4C feed reads.
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
 - [ ] Confirm weekly client reports show hub claims
@@ -59,19 +67,19 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 ## Phase 3: Run every cashback on the hub
 
 - [ ] Staff console covers the day's work without Salesforce screens: approvals, queue, emails, invoice view
-- [ ] Email templates out of Apex into one standard set kept in this repository, with merge fields, so the builder can preview them and wording changes are reviewed once for every campaign. Never edited per campaign (decisions.md #14).
+- [ ] Email templates out of Apex into one standard set kept in this repository, with merge fields, so the builder can preview them and wording changes are reviewed once for every campaign. Never edited per campaign (decisions.md #15).
 - [ ] Client reporting view (read-only, per client)
 - [ ] Nightly reconcile of invoice files; automated retention
 - [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
 - [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
 - [ ] Account name check before payment (Confirmation of Payee), if the paying bank offers it for batch payments
-- [ ] **More mechanics, in this order (Mark, 31 Oct 2026; decisions.md #13):**
+- [ ] **More mechanics, in this order (Mark, 31 Oct 2026; decisions.md #14):**
   1. **Prize draw:** entries through the promotion, winners drawn at the end. Next mechanic to build.
      - Entries, not claims: several per person where the terms allow, judged per receipt rather than per email.
      - The draw runs in the hub: secure random, a recorded and repeatable draw, reserve winners, the campaign's own time zone.
      - Winners recorded as `Entry_Win__c` against `Promotional_Campaign_Prize__c`, as today, so reports keep working.
      - Needs the permit check from the go-live gate (phase 4) at the same time, because a draw is a prize promotion.
-     - Winner emails sent automatically from the standard set, one email type per prize type, no per-campaign templates and no hand sending (decisions.md #14). Ships with the standard set above and with campaign logo and colour in emails.
+     - Winner emails sent automatically from the standard set, one email type per prize type, no per-campaign templates and no hand sending (decisions.md #15). Ships with the standard set above and with campaign logo and colour in emails.
   2. **Instant win:** winning moments drawn and sealed at go-live, awarded under a row lock, result on screen. Reuses the entry, prize and winner records built for the draw.
   - Gift with purchase: position in this order not yet set.
 

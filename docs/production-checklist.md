@@ -6,8 +6,9 @@ Nothing in this repository has been deployed to production. Production Salesforc
 
 - [ ] **C4C.** Today, hub claims reach Electrolux C4C only when staff change them, because the integration user doesn't hold `ElectroluxC4C_Basic_Auth_Access`. Should they be sent on lodge, on approval only, or as now?
 - [ ] **PNC compulsory on Electrolux campaigns?** C4C only receives product details when a PNC is present.
-- [ ] **Collect address, gender and age?** The old forms did, and some weekly reports (*Valids by State*, *Gender Split*, *Age Report*) use them.
-- [ ] **Consent wording** for Electrolux marketing opt-in, if wanted.
+- [x] **Address on Electrolux claims.** Full postal address and mobile, plus everything the current Electrolux build collects (Mark, 31 Oct 2026; decisions.md #13).
+- [ ] **Gender and age?** Some weekly reports (*Gender Split*, *Age Report*) use them. *Valids by State* is covered on Electrolux by #13.
+- [ ] **Consent wording** for the Electrolux marketing opt-in, and whose marketing it covers. Now wanted (decisions.md #13). The current forms leave `By_continuing_you_agree_to_Electrolux_s__c` unticked, so C4C receives `dataProtectionConsent: N` on every claim (all 4,125 Electrolux claims in the 180 days to 31 Oct 2026).
 - [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files.
 - [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
 - [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).

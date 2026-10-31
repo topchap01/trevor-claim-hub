@@ -106,7 +106,33 @@ Short records of the choices that shape the code, and what would change them.
 - *Accepted risk:* on a shared phone, someone else in the household can open the claim from the bar. The bar names the claimant ("Not Sam? Make a new claim below"), the bank details are masked to the last 3 digits, and changing them needs a code emailed to the claimant. The same exposure already exists through the phone's browser history, which holds the claim link.
 - *Revisit if* a client objects to the shared-phone exposure, or when the claim link moves fully into the cookie (roadmap phase 3).
 
-**13. After cashback: prize draw next, then instant win.** *(Mark, 31 Oct 2026)*
+**13. Electrolux claims collect the full postal address and mobile, plus everything the current Electrolux build collects.** *(Mark, 31 Oct 2026)*
+- *Why (Mark):* future marketing.
+- *What "the current build collects" means,* measured read-only in production on 31 Oct 2026. Like with like: the two one-off Electrolux cashbacks of 2026, not the always-on Better Living GWP.
+
+  | Field | AU Cross Category 2026 (1,708 claims) | NZ Kitchen 2026 (259 claims) | Hub today |
+  |---|---|---|---|
+  | Name, email, mobile | all | all | yes |
+  | Suburb | all | all | no |
+  | Postcode | all | none | no |
+  | State or region | all | all | no |
+  | Street, street number, unit | none | none | no |
+  | Store, from the retailer list | 2,175 of 2,176 receipts | 390 of 390 | no (free text only) |
+  | Store suburb | 2,175 of 2,176 | 390 of 390 | no |
+  | Store state | 2,175 of 2,176 | none | no |
+  | Invoice date | all receipts | all receipts | yes |
+  | Model, price per appliance | 4,518 and 4,523 of 4,523 | all 675 | yes |
+  | PNC and serial | 3,303 and 3,306 of 4,523 | 621 of 675 | optional |
+  | Terms tick | all | all | yes |
+  | Electrolux data consent tick | ticked on none | ticked on none | no |
+
+- *So the hub adds,* on Electrolux campaigns: unit, street number, street, suburb, postcode and state or region; the store picked from the retailer list, with its suburb and (AU) state. Street address is new: the current forms have not collected it.
+- *Where it goes:* the fields the C4C feed (`BambooElectroluxPromotionClaimService`) already reads, so Electrolux receives it without changes to that class: `Consumer_Unit_No__c`, `Consumer_Street_Number__c`, `Consumer_Street_Stamp__c`, `Consumer_Suburb__c`, `Consumer_PostalCode_Stamp__c`, `Consumer_State_Stamp__c` on the Entry; `Retailer__c`, `Retailer_Suburb__c`, `Retailer_State__c` on the receipt. On NZ claims the mobile also goes to `Consumer_Contact_Number__c`, as the old forms do. State and region values must match `State_Mapping__mdt` (for example `NSW`, `Auckland`), or C4C receives no state or country.
+- *Marketing needs consent, which the current build does not capture.* `By_continuing_you_agree_to_Electrolux_s__c` was unticked on all 4,125 Electrolux claims in the last 180 days, so C4C has been sending `dataProtectionConsent: N` on every claim. Collecting an address does not by itself allow it to be used for marketing. The opt-in wording and who it names (Electrolux, Trevor or both) stay with Mark (production-checklist.md, *Consent wording*).
+- *Not decided here:* gender and age; whether PNC is compulsory; when hub claims are sent to C4C. All three stay open in roadmap.md.
+- *Revisit if* Electrolux takes C4C data by API (decisions.md #1a) and its own schema asks for something else.
+
+**14. After cashback: prize draw next, then instant win.** *(Mark, 31 Oct 2026)*
 - *Why this order:* a draw with winners picked at the end is the simpler build. Instant win then reuses what the draw needs: entries rather than claims, prizes, winners, prize delivery and the permit check. The win is worked out at entry instead of at the end.
 - *Not decided:* where gift with purchase sits in the order (roadmap).
 - *Found while scoping (production, read only, 31 Oct 2026).* Production already runs both mechanics:
@@ -120,7 +146,7 @@ Short records of the choices that shape the code, and what would change them.
   - The old instant-win engine awards by timing rather than by random moment. The first entry after a staff-set window opens wins. It also checks the prize cap without a lock. No prize in production has gone over its cap: 66 capped prizes with wins, checked 31 Oct 2026.
 - Live campaigns stay on these tools (roadmap constraint). Fixing them in production would need Mark's approval.
 
-**14. Every claimant and winner email is automatic and standard. Nothing is written or sent by hand per campaign.** *(Mark, 31 Oct 2026)*
+**15. Every claimant and winner email is automatic and standard. Nothing is written or sent by hand per campaign.** *(Mark, 31 Oct 2026)*
 - *What it replaces:* today each prize campaign gets its own Salesforce email templates, built by hand for each stage. For example, Win a Weber Smokey Everyday 2026 had three, one with "Claim prize by 19/07/26" typed into its subject. Staff then send them one at a time from the entry record. A 500-winner draw would mean 500 hand sends.
 - *How the hub does it:*
   - **One standard set of emails per mechanic, written once.**
@@ -136,8 +162,8 @@ Short records of the choices that shape the code, and what would change them.
 ## Known follow-ups
 
 - Split `ClaimHubService.lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render` into smaller methods. Code Analyzer flags their complexity. They are fully tested, so the refactor is safe to do.
-- Move email templates out of Apex into one standard set kept in this repository (#14). Not editable per campaign.
-- Prize draw, then instant win (#13). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
+- Move email templates out of Apex into one standard set kept in this repository (#15). Not editable per campaign.
+- Prize draw, then instant win (#14). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
 - k6 load test script.
 - Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
 - Automated invoice file retention (an S3 lifecycle rule once on S3).
