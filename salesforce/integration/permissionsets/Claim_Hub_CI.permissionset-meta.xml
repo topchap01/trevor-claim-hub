@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Lets the user sign in through the Claim Hub CI app (JWT) from GitHub Actions. Grants nothing else; the user's own profile decides what CI can deploy. Sandbox only.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Claim Hub CI</label>
+</PermissionSet>
