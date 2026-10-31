@@ -17,13 +17,16 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
+- [ ] Sandbox web address `trevor-claim-hub-test.vercel.app` is open to anyone (Vercel SSO covers only preview and per-deployment addresses). Anyone with the address can lodge test claims into Wizard and trigger paid invoice reads. Keep it open for testing and client sign-off, or protect it? (audit, 31 Oct 2026)
 
 ## Phase 1: Developer handover (now)
 
 - [x] Engine, claim pages, builder, staff console in the sandbox
 - [x] 47 Apex tests, 95% coverage; static analysis clean of high findings; independent review fixes
 - [x] Code on GitHub; Vercel deploys from `main`
-- [ ] Replace the sandbox integration key (exposed in a working session; see runbook)
+- [ ] **Turn on Apex tests in CI (moved to the top, audit 31 Oct 2026).** CI's Salesforce job shows green but has never deployed or tested Apex: the `SF_SANDBOX_*` secrets are not set, so it exits with a warning. Needs a CI deploy user and External Client App in Wizard (not the claim hub integration user) and the three secrets in GitHub. Until then, run `scripts/run-apex-tests.sh wizard` by hand before every merge that touches `salesforce/`.
+- [ ] Get Apex into Wizard for the two open pull requests (#3 bank checks, #4 returning claimants), run the tests, merge one at a time. Both change the same five Apex files (`ClaimHubApi`, `ClaimHubService`, `ClaimHubServiceTest`, `ClaimHubTestFactory`, `Claim_Hub_Admin`), so the second needs a rebase after the first merges.
+- [ ] Replace the sandbox integration key (exposed in a working session; see runbook). Still the original key on 31 Oct 2026.
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
 

@@ -12,7 +12,7 @@ Your user has the `Claim_Hub_Admin` and `Claim_Link_Admin` permission sets.
 | Electrolux AU Cross Category Cashback (sandbox copy) | `/electrolux-cross-category` | Built from production ELN0002's terms. Pays 15% of spend for 2 appliances and 20% for 3 or more. Has 93 products and AU bank details. |
 | Electrolux Kitchen Refresh Cashback 2027 | `/electrolux-kitchen-refresh` | The first made-up demo: fixed amounts by quantity. |
 
-The web app runs at `https://trevor-claim-hub-test.vercel.app` and is protected by Vercel SSO.
+The web app runs at `https://trevor-claim-hub-test.vercel.app` and is open to anyone with the address. Vercel SSO protects only preview and per-deployment addresses (checked 31 Oct 2026; whether to close it is an open decision in roadmap.md).
 
 ## Claims to look at (AEG NZ)
 

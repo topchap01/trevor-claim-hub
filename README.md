@@ -22,7 +22,7 @@ Status: running end to end in the **Wizard sandbox**. Not yet in production. See
 ## Start here
 
 1. **Read** [docs/architecture.md](docs/architecture.md), then [docs/security.md](docs/security.md). Where the project is going: [docs/roadmap.md](docs/roadmap.md). Standing rules for anyone working on it: [CLAUDE.md](CLAUDE.md).
-2. **See it in the sandbox.** Log in to the Wizard sandbox (`test.salesforce.com`). Open the **Claim Hub** app from the App Launcher. Pick *AEG NZ Harvey Norman Cashback Summer 2026 (sandbox)* in the console, or use **Campaign from Terms** to build one. The claimant side is at `https://trevor-claim-hub-test.vercel.app/aeg-nz-cashback`. It is protected by Vercel SSO, so ask Mark for access.
+2. **See it in the sandbox.** Log in to the Wizard sandbox (`test.salesforce.com`). Open the **Claim Hub** app from the App Launcher. Pick *AEG NZ Harvey Norman Cashback Summer 2026 (sandbox)* in the console, or use **Campaign from Terms** to build one. The claimant side is at `https://trevor-claim-hub-test.vercel.app/aeg-nz-cashback`. That address is open; preview deployments are behind Vercel SSO, so ask Mark for access to those.
 3. **Run the tests:**
 
 ```bash

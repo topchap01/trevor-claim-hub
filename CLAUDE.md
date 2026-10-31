@@ -17,7 +17,7 @@ Owner: Mark Alexander (Bamboo Marketing / Trevor Services).
 |---|---|
 | Salesforce sandbox | Wizard (`trevor-services--wizard.sandbox.my.salesforce.com`), CLI alias `wizard`. Set `SFDX_DISABLE_DNS_CHECK=true` before CLI commands. |
 | Salesforce production | `trevor-services.my.salesforce.com` (AUS68). **Read-only.** Nothing is deployed or changed there without Mark's explicit approval. |
-| Web app (sandbox) | Vercel project `trevor-claim-hub-test` (team `team_0oBBLrjzMK25pmA9AR8j4MNs`), root directory `web`, region syd1, behind Vercel SSO. Every push to `main` deploys it. |
+| Web app (sandbox) | Vercel project `trevor-claim-hub-test` (team `team_0oBBLrjzMK25pmA9AR8j4MNs`), root directory `web`, region syd1. Vercel SSO covers preview and per-deployment addresses only: `trevor-claim-hub-test.vercel.app` itself is open to anyone (checked 31 Oct 2026). Every push to `main` deploys it. |
 | Invoice files (sandbox) | Vercel Blob store `trevor-claim-hub-invoices` (private, syd1). Production will use S3 in Sydney (decisions.md #6). |
 | Code | github.com/topchap01/trevor-claim-hub (private) |
 
