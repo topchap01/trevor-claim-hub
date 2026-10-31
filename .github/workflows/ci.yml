@@ -66,12 +66,12 @@ jobs:
           # On failure, put Salesforce's reason on the check itself (secrets stay masked), so it can be read without the log
           set +e
           OUT=$(sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
-            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci --json 2>&1)
+            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci --json 2>/dev/null)
           STATUS=$?
           set -e
           rm server.key
           if [ $STATUS -ne 0 ]; then
-            REASON=$(printf '%s' "$OUT" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log([j.name,j.message].filter(Boolean).join(": ").replace(/\s+/g," ").slice(0,600))}catch{console.log(s.replace(/\s+/g," ").slice(-600))}})')
+            REASON=$(printf '%s' "$OUT" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j={};try{j=JSON.parse(s)}catch{const m=/"message":\s*"((?:[^"\\]|\\.)*)"/.exec(s);const n=/"name":\s*"((?:[^"\\]|\\.)*)"/.exec(s);j={name:n&&n[1],message:m?m[1]:s.slice(0,600)}}console.log([j.name,j.message].filter(Boolean).join(": ").replace(/\s+/g," ").slice(0,600))})')
             echo "::error title=Sandbox sign-in failed::$REASON"
             exit 1
           fi
