@@ -106,11 +106,25 @@ Short records of the choices that shape the code, and what would change them.
 - *Accepted risk:* on a shared phone, someone else in the household can open the claim from the bar. The bar names the claimant ("Not Sam? Make a new claim below"), the bank details are masked to the last 3 digits, and changing them needs a code emailed to the claimant. The same exposure already exists through the phone's browser history, which holds the claim link.
 - *Revisit if* a client objects to the shared-phone exposure, or when the claim link moves fully into the cookie (roadmap phase 3).
 
+**13. After cashback: prize draw next, then instant win.** *(Mark, 31 Oct 2026)*
+- *Why this order:* a draw with winners picked at the end is the simpler build. Instant win then reuses what the draw needs: entries rather than claims, prizes, winners, prize delivery and the permit check. The win is worked out at entry instead of at the end.
+- *Not decided:* where gift with purchase sits in the order (roadmap).
+- *Found while scoping (production, read only, 31 Oct 2026).* Production already runs both mechanics:
+  - **Draws:** a staff tool, `SelectWinner` (2022). It is in current use: 140 winners on IBA Grant Burge 2027 AFL Grand Final Experience between 22 and 29 Oct 2026.
+  - **Instant wins:** `InstantWin` and `InstantWinDefinitionManual` (last changed 2021). The largest pool they have awarded is 201 prizes, on Cupio Instant Win and on BWS Grant Burge AFL Grand Final 2026.
+- *Why the hub builds its own draw rather than calling `SelectWinner`:*
+  - **Winners can come up short.** Picks go into a set, so a number drawn twice is dropped. The draw then returns fewer winners than asked for, and says nothing.
+  - **Uneven odds.** The first and last entries in the list get half the chance of everyone else, and the list has no fixed order.
+  - **No audit trail.** It uses `Math.random`, which is not a secure generator, and keeps no record that would let the draw be repeated or checked.
+  - **Fixed clock.** The time zone is fixed to Sydney, which is wrong for NZ promotions.
+  - The old instant-win engine awards by timing rather than by random moment. The first entry after a staff-set window opens wins. It also checks the prize cap without a lock. No prize in production has gone over its cap: 66 capped prizes with wins, checked 31 Oct 2026.
+- Live campaigns stay on these tools (roadmap constraint). Fixing them in production would need Mark's approval.
+
 ## Known follow-ups
 
 - Split `ClaimHubService.lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render` into smaller methods. Code Analyzer flags their complexity. They are fully tested, so the refactor is safe to do.
 - Move email templates out of Apex into Salesforce email templates or custom metadata, so staff can edit wording.
-- Instant-win and prize-draw mechanics: designed but not built (winning moments drawn and sealed in advance, awarded under a row lock).
+- Prize draw, then instant win (#13). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
 - k6 load test script.
 - Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
 - Automated invoice file retention (an S3 lifecycle rule once on S3).

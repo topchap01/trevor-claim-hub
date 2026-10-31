@@ -17,6 +17,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
+- [x] Next mechanics: prize draw first, then instant win (Mark, 31 Oct 2026; decisions.md #13).
+- [ ] Where gift with purchase sits in that order.
 - [ ] Sandbox web address `trevor-claim-hub-test.vercel.app` is open to anyone (Vercel SSO covers only preview and per-deployment addresses). Anyone with the address can lodge test claims into Wizard and trigger paid invoice reads. Keep it open for testing and client sign-off, or protect it? (audit, 31 Oct 2026)
 - [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #11).
 
@@ -62,7 +64,14 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 - [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
 - [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
 - [ ] Account name check before payment (Confirmation of Payee), if the paying bank offers it for batch payments
-- [ ] More mechanics: gift with purchase, then instant win and prize draws (designed, not built)
+- [ ] **More mechanics, in this order (Mark, 31 Oct 2026; decisions.md #13):**
+  1. **Prize draw:** entries through the promotion, winners drawn at the end. Next mechanic to build.
+     - Entries, not claims: several per person where the terms allow, judged per receipt rather than per email.
+     - The draw runs in the hub: secure random, a recorded and repeatable draw, reserve winners, the campaign's own time zone.
+     - Winners recorded as `Entry_Win__c` against `Promotional_Campaign_Prize__c`, as today, so reports keep working.
+     - Needs the permit check from the go-live gate (phase 4) at the same time, because a draw is a prize promotion.
+  2. **Instant win:** winning moments drawn and sealed at go-live, awarded under a row lock, result on screen. Reuses the entry, prize and winner records built for the draw.
+  - Gift with purchase: position in this order not yet set.
 
 ## Phase 4: Client self-serve (subscription product)
 
