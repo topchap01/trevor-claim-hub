@@ -8,7 +8,7 @@ Your user has the `Claim_Hub_Admin` and `Claim_Link_Admin` permission sets.
 
 | Campaign | Web address | What it shows |
 |---|---|---|
-| AEG NZ Harvey Norman Cashback Summer 2026 (sandbox) | `/aeg-nz-cashback` | Built by the builder from AEG's real NZ terms, with new dates. Has spend bands (NZ$5,000+), a Harvey Norman-only rule, a single transaction, T2 serial prefixes A, B and C excluded, and NZ bank accounts. |
+| AEG NZ Harvey Norman Cashback Summer 2026 (sandbox) | `/aeg-nz-cashback` | Built by the builder from AEG's real NZ terms, with new dates. Has spend bands (NZ$5,000+), a Harvey Norman-only rule, a single transaction, T2 serial prefixes A, B and C excluded, and NZ bank accounts. Wears the AEG design copied from aegcashbackpromo.co.nz (`web/designs/aeg-nz-cashback`), with the banner's baked-in dates removed and the dates rendered from the campaign. |
 | Electrolux AU Cross Category Cashback (sandbox copy) | `/electrolux-cross-category` | Built from production ELN0002's terms. Pays 15% of spend for 2 appliances and 20% for 3 or more. Has 93 products and AU bank details. |
 | Electrolux Kitchen Refresh Cashback 2027 | `/electrolux-kitchen-refresh` | The first made-up demo: fixed amounts by quantity. |
 
