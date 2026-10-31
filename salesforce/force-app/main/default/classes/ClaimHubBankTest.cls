@@ -85,16 +85,28 @@ private class ClaimHubBankTest {
         System.assert(otherBranch.review.contains('branch 3141') && !otherBranch.review.contains('no check digit'), 'known bank, branch not listed: ' + otherBranch.review);
     }
 
-    @isTest static void auBsbsAreCheckedAgainstTheDirectory() {
+    // One lodge per test: each lodge also runs the org's existing Entry flows, and three in one
+    // transaction passed the 100-query limit in Wizard. Claimants lodge one claim per transaction.
+    @isTest static void auBsbInTheDirectoryPasses() {
         loadRegisters();
         ClaimHubTestFactory.campaign('AU', null);
         Id listed = lodge('AU', new Map<String, Object>{ 'name' => 'S Tester', 'bsb' => '062-000', 'account' => '12345678' }, 'au1@example.com');
         System.assertEquals(0, flags(listed));
+        System.assertEquals('Commonwealth Bank of Australia', ClaimHubBank.au('062000').bankName);
+    }
+
+    @isTest static void auBsbNotInTheDirectoryIsFlagged() {
+        loadRegisters();
+        ClaimHubTestFactory.campaign('AU', null);
         Id unlisted = lodge('AU', new Map<String, Object>{ 'name' => 'S Tester', 'bsb' => '999-999', 'account' => '12345679' }, 'au2@example.com');
         System.assertEquals(1, flags(unlisted), 'BSB not in the directory');
+    }
+
+    @isTest static void auBsbWithNoElectronicPaymentsIsFlagged() {
+        loadRegisters();
+        ClaimHubTestFactory.campaign('AU', null);
         Id paper = lodge('AU', new Map<String, Object>{ 'name' => 'S Tester', 'bsb' => '062-001', 'account' => '12345670' }, 'au3@example.com');
         System.assertEquals(1, flags(paper), 'BSB takes no electronic payments');
-        System.assertEquals('Commonwealth Bank of Australia', ClaimHubBank.au('062000').bankName);
     }
 
     @isTest static void bankChangesAreCheckedToo() {
