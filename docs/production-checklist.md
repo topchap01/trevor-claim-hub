@@ -10,8 +10,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] **Consent wording** for Electrolux marketing opt-in, if wanted.
 - [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files.
 - [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
-- [ ] **Vercel plan.** A Pro team is needed for the WAF rate limit, a custom domain on the production project, longer log retention and a DPA.
-- [ ] **Production hub domain**, for example `claims.trevor.services`.
+- [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).
+- [x] **Campaign addresses.** Own domain per campaign, plus a backup on yourpromotion.com.au (decisions.md #10).
 
 ## Salesforce production changes
 
@@ -50,6 +50,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Environment variables: `SF_LOGIN_URL` (`https://login.salesforce.com` or the My Domain), `SF_AUDIENCE=https://login.salesforce.com`, `SF_USERNAME`, `SF_CLIENT_ID`, `SF_PRIVATE_KEY` (sensitive), and `BLOB_READ_WRITE_TOKEN` (from connecting a production Blob store).
 - [ ] Set `HUB_ENV=production` to remove the sandbox banner. Leave `HUB_HOME_SLUG` unset, so the bare domain shows nothing.
 - [ ] Custom domain and HTTPS.
+- [ ] Content security policy (`web/next.config.mjs`) allows each campaign's images and fonts. Today it allows only the hub's own address.
+- [ ] Live campaign pages indexable by search engines. Today every page sends `noindex`. Claim-status pages (`/c`) stay noindex.
 - [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny.
 - [ ] Uptime monitor on `/api/health`.
 - [ ] Load test before launch: about 2,000 claims a day, with a 10× burst (k6 script, not yet written).

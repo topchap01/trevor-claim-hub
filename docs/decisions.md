@@ -31,6 +31,7 @@ Short records of the choices that shape the code, and what would change them.
   - Sydney region.
   - Preview deployments per pull request.
   - Private Blob storage alongside.
+- *Plan:* Pro (Mark, 31 Oct 2026).
 - *Alternative:* any Node host. The app uses no Vercel-only APIs apart from `@vercel/blob`, which sits behind `web/lib/files.js`.
 
 **3. Rules live in Apex; the web app holds no state.**
@@ -70,7 +71,16 @@ Short records of the choices that shape the code, and what would change them.
 
 **9. Emails go through an outbox object, with one dispatcher.** Every email is a record before it is sent, so nothing is lost when sending fails, staff can see what each claimant received, and changes made close together are merged into one email. The dispatcher locks the rows it sends (`FOR UPDATE`, status re-checked). A delayed job only re-queues itself when no other dispatcher is waiting, so overlapping runs never send an email twice and job chains never multiply.
 
-**10. Returning claimants: make the way back obvious, and remember the claim on the phone.** Decided by Mark, 31 October 2026: whatever is easiest for the least confident claimant.
+**10. Each campaign has its own look and feel. Entry pages are not standardised.** (Mark, 31 Oct 2026)
+- Every campaign's consumer pages carry that campaign's own design, as the current microsites do. One template with a swappable colour and logo is not enough.
+- What stays common is the claim engine: rules, checks, the claim record, emails, payments.
+- **How the design is delivered (Mark, 31 Oct 2026): the hub hosts it.** The studio's page (HTML, CSS, images, fonts) is attached to the campaign and served by the hub, with the standard claim form placed where the page marks it. No code deploy per campaign. No scripts are allowed in a design, because the same page takes bank details; the hub strips them.
+- The claim steps (form, private claim page, serials, bank details) stay common to every campaign and take the campaign's colours, fonts and logo from its design.
+- **Addresses (Mark, 31 Oct 2026).** Each campaign is served on its own domain, as now (for example aegcashbackpromo.co.nz), which the builder adds to Vercel. It also gets a backup address on yourpromotion.com.au as soon as it is built, for testing, client sign-off and late DNS. Claim links carry the claim code and campaign, so reusing a domain for a brand's next campaign does not break earlier claims.
+- **Not now (Mark, 31 Oct 2026):** source tags on QR codes for counting claims by channel.
+- *Found while scoping:* the hub's security policy allows images and fonts only from its own address, and every page is marked noindex. Both must change per campaign before go-live (production-checklist.md).
+
+**12. Returning claimants: make the way back obvious, and remember the claim on the phone.** Decided by Mark, 31 October 2026: whatever is easiest for the least confident claimant.
 - *The problem:* the claim link in the email is the only way into a claim. People lose the email, come back to the promotion page and either fill in the form again or give up.
 - *What the hub does:*
   - **Welcome back.** Making or opening a claim stores its link code in a cookie on that phone, one per promotion (`hub_claim_<slug>`: HttpOnly, Secure, SameSite=Lax, 180 days). The promotion page then opens with "Welcome back, Sam", one line on where the claim is up to, and an "Open my claim" button. A link that has been replaced by a newer one is ignored, so the bar simply doesn't show.
@@ -90,4 +100,4 @@ Short records of the choices that shape the code, and what would change them.
 - Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
 - Automated invoice file retention (an S3 lifecycle rule once on S3).
 - A nightly reconcile job: Blob files no receipt points to (left behind when Salesforce timed out), and receipts whose file is missing.
-- Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs. The cookie now exists (#10); what's left is the claim page reading it instead of `?token=`.
+- Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs. The cookie now exists (#12); what's left is the claim page reading it instead of `?token=`.

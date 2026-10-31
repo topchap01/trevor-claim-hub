@@ -29,7 +29,7 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 | `GET /api/campaign/{slug}` | `GET campaigns/{slug}` | Public promotion details: products, tiers, dates, rules. |
 | `POST /api/campaign/{slug}/claim` | `POST campaigns/{slug}/claims` | Lodge a claim. Returns `{token}`. |
 | `POST /api/campaign/{slug}/chat` | `POST campaigns/{slug}/chat` | Help assistant, before a claim exists. |
-| `GET /api/claim/{token}` | `GET claims/{token}` | The claimant's view of their claim. On success the web app sets the `hub_claim_<slug>` cookie, so this phone remembers the claim (decisions.md #10). Lodging sets it too. |
+| `GET /api/claim/{token}` | `GET claims/{token}` | The claimant's view of their claim. On success the web app sets the `hub_claim_<slug>` cookie, so this phone remembers the claim (decisions.md #12). Lodging sets it too. |
 | `POST /api/claim/{token}/serial` | `POST claims/{token}/serial` | `{productId, serial, pnc?}` |
 | `POST /api/claim/{token}/receipt` | `POST claims/{token}/receipt` | `{base64, contentType, fileName}`. The web app stores the file and adds `fileKey`. |
 | `POST /api/claim/{token}/plate` | `POST claims/{token}/plate` | `{base64, contentType}`. Returns `{serial, pnc, model, readable}` or `{error}`. |
