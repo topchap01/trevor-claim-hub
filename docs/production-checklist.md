@@ -39,6 +39,11 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Recommended: move the Anthropic key from `Claude_Setting__mdt` to a Named Credential.
 - [ ] Recommended: ask Salesforce Support for a custom index on `Entry_Product__c.Serial_Number__c`. Duplicate checks against old-form claims scan about 42,000 rows today.
 
+## Testing gaps
+
+- [ ] **CI does not run Apex tests.** The `SF_SANDBOX_*` repository secrets are not set, so the "validate deploy and run tests in the sandbox" job passes with the warning *Apex tests not run*. Every pull request so far, including #4 (returning claimants), has relied on someone running `scripts/run-apex-tests.sh wizard` by hand. Set the secrets (a CI connected app in Wizard with JWT bearer) so the job actually deploys and tests.
+- [ ] **Returning claimants (#4) in Wizard:** deploy `salesforce/force-app`, run the Apex tests, then on the preview: lodge, open the promotion page again (expect "Welcome back"), claim again with the same email (expect the one-tap link), and claim with a new email and the same mobile (expect the review flag in the console).
+
 ## Legacy issues found while testing (not caused by the hub)
 
 - `EntryCreation` trigger queries the Lead once per inserted Entry. Bulk inserts of more than about 90 Entries fail on the SOQL limit (found by `ClaimHubEntryHandlerTest`). The hub inserts one at a time, so it is unaffected. Data loads into the old objects should use small batches until it is bulkified.

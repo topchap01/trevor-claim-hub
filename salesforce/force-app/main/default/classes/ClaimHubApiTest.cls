@@ -24,6 +24,9 @@ private class ClaimHubApiTest {
         r = call('POST', 'campaigns/' + ClaimHubTestFactory.SLUG + '/claims', ClaimHubTestFactory.claimRequest(c.Id, 'api@example.com', 1, false, 'AU'));
         System.assertEquals(200, r.statusCode, r.responseBody.toString());
         String token = (String) json(r).get('token');
+        RestResponse again = call('POST', 'campaigns/' + ClaimHubTestFactory.SLUG + '/claims', ClaimHubTestFactory.claimRequest(c.Id, 'API@example.com', 1, false, 'AU'));
+        System.assertEquals(409, again.statusCode);
+        System.assertEquals('duplicate_email', json(again).get('code'), 'the claim page offers the link by this code');
         System.assertNotEquals(null, [SELECT Hub_Client_IP_Hash__c FROM Entry__c WHERE Access_Token__c = :token].Hub_Client_IP_Hash__c, 'connection recorded, hashed');
 
         System.assertEquals(200, call('GET', 'claims/' + token, null).statusCode);

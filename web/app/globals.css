@@ -77,6 +77,16 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 .timeline li:first-child { border-top: 0; }
 .timeline time { color: var(--muted); flex: none; width: 108px; }
 .terms { white-space: pre-wrap; font-size: 14px; color: var(--muted); }
+/* Returning claimants */
+.welcomeback { background: var(--ok-bg); border-bottom: 1px solid var(--line); padding: 14px 16px; }
+.welcomeback .inner { max-width: 720px; margin: 0 auto; }
+.welcomeback p { margin: 0 0 10px; color: var(--ink); }
+.welcomeback .btn { display: block; text-align: center; text-decoration: none; }
+.welcomeback .notyou { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+@media (min-width: 640px) { .welcomeback .btn { display: inline-block; } }
+.returning { margin: -4px 0 12px; font-size: 15px; }
+.returning a { font-weight: 700; }
+#already-claimed { scroll-margin-top: 16px; }
 .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -3px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 480px) { .tiers { grid-template-columns: 1fr 1fr 1fr; } .tier b { font-size: 18px; } .prod { grid-template-columns: 1fr 92px 40px; } .timeline time { width: 92px; } }

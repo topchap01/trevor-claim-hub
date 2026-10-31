@@ -119,6 +119,20 @@ private class ClaimHubServiceTest {
         System.assertEquals(1, ClaimHubTestFactory.events(second.Id, 'Needs review: bank account'));
     }
 
+    @isTest static void sharedMobilesAreFlaggedWhateverTheFormat() {
+        Promotional_Campaign__c c = au();
+        Map<String, Object> r1 = ClaimHubTestFactory.claimRequest(c.Id, 'sam.typo@example.com', 1, false, 'AU');
+        r1.put('mobile', '0412 345 678');
+        ClaimHubService.lodge(ClaimHubTestFactory.SLUG, r1);
+        Map<String, Object> r2 = ClaimHubTestFactory.claimRequest(c.Id, 'sam@example.com', 1, false, 'AU');
+        r2.put('mobile', '+61 412-345-678');
+        Id second = ClaimHubTestFactory.entry((String) ClaimHubService.lodge(ClaimHubTestFactory.SLUG, r2).get('token')).Id;
+        System.assertEquals(1, ClaimHubTestFactory.events(second, 'Needs review: mobile'), 'same mobile, different format, is flagged');
+        Id third = ClaimHubTestFactory.entry(ClaimHubTestFactory.lodge(c.Id, 'other@example.com', 1, false, 'AU')).Id;
+        System.assertEquals(0, ClaimHubTestFactory.events(third, 'Needs review: mobile'), 'a different mobile is not');
+        System.assertEquals(null, ClaimHubService.mobileKey('123'));
+    }
+
     // ------------------------------------------------------------------ serials
     @isTest static void serialsAreCheckedAndSaved() {
         Promotional_Campaign__c c = au();

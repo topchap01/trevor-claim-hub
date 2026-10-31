@@ -31,6 +31,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 
 ## Phase 2: First production campaign
 
+Brought forward on 31 October 2026, because a claimant who can't find their way back is a support call on every campaign: returning claimants (decisions.md #12). Built in PR #4, but its Apex is not yet in Wizard and its Apex tests have not run (audit, 31 Oct 2026). It goes to production with the rest of `salesforce/force-app`, including the new `Entry__c.Hub_Mobile_Key__c` field.
+
 - [ ] S3 adapter for invoice files, Sydney bucket with retention rule
 - [ ] Production integration user, External Client App and new key pair
 - [ ] Deploy `salesforce/force-app` and the legacy trigger guard to production
@@ -52,7 +54,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Email wording editable by staff (templates out of Apex)
 - [ ] Client reporting view (read-only, per client)
 - [ ] Nightly reconcile of invoice files; automated retention
-- [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs)
+- [ ] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Built; deploy the Apex to Wizard and run its tests before merging.
+- [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
 - [ ] Account name check before payment (Confirmation of Payee), if the paying bank offers it for batch payments
 - [ ] More mechanics: gift with purchase, then instant win and prize draws (designed, not built)
 

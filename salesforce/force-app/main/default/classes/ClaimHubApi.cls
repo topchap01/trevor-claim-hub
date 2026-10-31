@@ -47,7 +47,9 @@ global without sharing class ClaimHubApi {
             if (ex.flagEntry != null) ClaimHubLog.event(ex.flagEntry, 'System', ex.flagAction, ex.flagDetail);
             if (ex.failedOtp != null) countFailedCode(ex.failedOtp);
             res.statusCode = ex.status;
-            res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => ex.getMessage() }));
+            Map<String, Object> err = new Map<String, Object>{ 'error' => ex.getMessage() };
+            if (ex.code != null) err.put('code', ex.code);
+            res.responseBody = Blob.valueOf(JSON.serialize(err));
         } catch (TypeException ex) {
             // A field of the wrong type (e.g. products not a list): the caller's mistake, not ours
             if (sp != null) Database.rollback(sp);

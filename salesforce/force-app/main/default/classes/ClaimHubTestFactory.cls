@@ -46,11 +46,16 @@ public class ClaimHubTestFactory {
         List<Object> items = new List<Object>();
         List<Promotional_Product__c> ps = products(campaignId);
         for (Integer i = 0; i < count; i++) items.add(new Map<String, Object>{ 'promoProductId' => ps[i].Id, 'price' => '$1,000' });
-        Map<String, Object> req = new Map<String, Object>{ 'firstName' => 'Sam', 'lastName' => 'Tester', 'email' => email, 'mobile' => '0412 345 678', 'products' => items, 'acceptedTerms' => true };
+        Map<String, Object> req = new Map<String, Object>{ 'firstName' => 'Sam', 'lastName' => 'Tester', 'email' => email, 'mobile' => mobileFor(email), 'products' => items, 'acceptedTerms' => true };
         if (withBank) req.put('bank', country == 'NZ'
             ? new Map<String, Object>{ 'name' => 'S Tester', 'account' => '12-3140-0234566-00' }
             : new Map<String, Object>{ 'name' => 'S Tester', 'bsb' => '062-000', 'account' => '12345678' });
         return req;
+    }
+
+    /** A different made-up mobile for each email, so only tests that mean to share a mobile do. */
+    public static String mobileFor(String email) {
+        return '04' + String.valueOf(Math.abs(email.hashCode())).leftPad(8, '0').right(8);
     }
 
     /** Lodges a claim and returns its link code. */
