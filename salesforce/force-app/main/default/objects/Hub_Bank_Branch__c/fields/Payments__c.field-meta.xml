@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Payments__c</fullName>
+    <description>AU only: the payment streams the BSB takes, from P (paper), E (electronic) and H (high value). A BSB without E can't receive the hub's payments.</description>
+    <externalId>false</externalId>
+    <label>Payments</label>
+    <length>3</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

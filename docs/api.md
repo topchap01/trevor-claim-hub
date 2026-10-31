@@ -36,6 +36,7 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 | `POST /api/claim/{token}/code` | `POST claims/{token}/code` | Emails a 6-digit bank-change code. |
 | `POST /api/claim/{token}/bank` | `POST claims/{token}/bank` | `{code, name, bsb?, account}` |
 | `POST /api/claim/{token}/chat` | `POST claims/{token}/chat` | `{messages:[{role, content}]}`, with the claim as context. |
+| `GET /api/bank/{NZ\|AU}/{6 digits}` | `GET banks/{country}/{code}` | Bank and branch for an NZ bank-and-branch prefix or an AU BSB, from the registers. `{found, bankName?, branchName?, electronic?, registerLoaded?}`. No personal data in or out. Cached 12 hours per server instance. |
 | `POST /api/resend` | `POST resend` | `{slug, email}`. Always `{sent:true}`, so it can't be used to test which emails have claims. Issues a new link code; the old link stops working. |
 | `GET /api/file?t=` | `GET files/{ticket}` | Staff only, by ticket. Streams the invoice from private storage. |
 | `GET /api/health` | `GET health` | 200 or 503 with counts. No personal data. |
@@ -48,7 +49,7 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
   "products": [
     { "promoProductId": "a0B...", "price": "4299", "serial": "61234567", "pnc": "949597455" }
   ],
-  "bank": { "name": "S Tester", "account": "12-3140-0234567-00" },
+  "bank": { "name": "S Tester", "account": "12-3140-0234566-00" },
   "invoice": { "number": "HN-1", "date": "2026-11-02", "store": "Harvey Norman Auburn" }
 }
 ```
@@ -71,11 +72,12 @@ Each check refuses with a 4xx before anything is saved.
 8. The minimum spend is met.
 9. The serial format is valid, the serial does not start with an excluded prefix, and no serial is entered twice on the form.
 10. The basket reaches a cashback tier.
-11. The bank format is right for the country.
+11. The bank format is right for the country, and an NZ account number passes its bank's check digit (decisions.md #10).
 
 After saving, these are flagged for the team but not refused:
 - a third or later claim from one connection in 24 hours;
-- a bank account already on another claim in the promotion.
+- a bank account already on another claim in the promotion;
+- bank details the registers can't confirm: a bank, branch or BSB they don't list, or a BSB that takes no electronic payments.
 
 ## Claim view
 

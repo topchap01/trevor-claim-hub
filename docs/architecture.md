@@ -76,6 +76,7 @@ The loader is the only code that changes when designs move to the asset store.
 |---|---|
 | `ClaimHubApi` | REST router, savepoints, error mapping. |
 | `ClaimHubService` | Campaigns, lodging, the claim view, serials, invoice upload, bank changes, link resend. Also the status engine (`recompute`). |
+| `ClaimHubBank` | Bank detail checks: NZ check digits, and bank, branch and BSB lookups in the registers (decisions.md #10). |
 | `ClaimHubInvoice` | Checks an invoice, as read by Claude, against the claim and the rules. Lists problems; never refuses on its own. |
 | `ClaimHubAssistant` | The help chat. Answers from the terms summary and the claim, and hands over to a person. |
 | `ClaimHubVision` | All Claude calls in one place. Fails soft: an outage sends work to the team instead of failing the claimant. |
@@ -107,6 +108,7 @@ The hub adds no parallel claim objects. It writes the existing ones, so reports,
 | `Claim_Event__c` *(new)* | Audit trail. Actions starting `Needs review:` feed the console queue. Those, and `Internal:` actions, are never shown to the claimant. |
 | `Claim_Notification__c` *(new)* | The outbox. Every email exists as a record first: Queued, then Sent, Failed, Skipped or Merged. |
 | `Claim_OTP__c` *(new)* | Bank-change codes. Only the hash is stored. They expire after 10 minutes, allow 5 attempts each, and at most 10 can be issued a day. |
+| `Hub_Bank_Branch__c` *(new)* | Bank registers: Payments NZ branches and AusPayNet BSBs, keyed `NZ-01-0242` / `AU-062-000`. Public reference data, loaded monthly by `scripts/load-bank-register.mjs`. |
 | `Claim_Hub_Settings__c` *(new)* | Hierarchy custom setting: limits, debounce time, alert email, model and file link base. |
 
 ## Claim lifecycle

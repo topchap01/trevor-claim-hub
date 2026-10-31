@@ -12,6 +12,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
 - [ ] **Vercel plan.** A Pro team is needed for the WAF rate limit, a custom domain on the production project, longer log retention and a DPA.
 - [ ] **Production hub domain**, for example `claims.trevor.services`.
+- [ ] **Confirmation of Payee for batch payments.** Ask Trevor's paying bank whether it is offered on payment file uploads or by API, in NZ and AU (decisions.md #10).
 
 ## Salesforce production changes
 
@@ -29,6 +30,10 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Run `scripts/apex/schedule-jobs.apex`.
 - [ ] Verify org-wide email addresses for each campaign sender, and check deliverability.
 - [ ] Assign `Claim_Hub_Admin` to the claims team.
+- [ ] Load the bank registers into `Hub_Bank_Branch__c` (decisions.md #10): `node scripts/load-bank-register.mjs --org <prod> --nz <Payments NZ .xlsx> --au BSBDirectoryFull.txt --au-key <key>.csv --approved-for-production`. Before the first load:
+  - confirm Payments NZ's terms allow the Bank Branch Register to be used this way;
+  - check production **data** storage has room for the rows (one per NZ branch and AU BSB; the January 2026 NZ register lists 3,296 branch numbers);
+  - name who runs the monthly refresh (AusPayNet updates on the first NSW business day of each month).
 - [ ] **File storage is at 119% in production (−9,175 MB remaining).** The hub no longer adds invoice files to Salesforce, but the overage still needs a clean-up or more storage.
 - [ ] Recommended: move the Anthropic key from `Claude_Setting__mdt` to a Named Credential.
 - [ ] Recommended: ask Salesforce Support for a custom index on `Entry_Product__c.Serial_Number__c`. Duplicate checks against old-form claims scan about 42,000 rows today.

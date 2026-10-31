@@ -15,6 +15,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Vercel Pro (needed for commercial use, team members, rate limiting, a custom domain).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
+- [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #10).
 
 ## Phase 1: Developer handover (now)
 
@@ -24,6 +25,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Replace the sandbox integration key (exposed in a working session; see runbook)
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
+- [ ] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #10). Built; merge once the Apex tests pass in Wizard, then load the registers into Wizard.
 
 ## Phase 2: First production campaign
 
@@ -34,6 +36,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
 - [ ] Confirm weekly client reports show hub claims
+- [ ] Load the bank registers into production (needs Mark's approval), and give someone the monthly refresh
 
 ## Phase 3: Run every cashback on the hub
 
@@ -42,6 +45,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Client reporting view (read-only, per client)
 - [ ] Nightly reconcile of invoice files; automated retention
 - [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs)
+- [ ] Account name check before payment (Confirmation of Payee), if the paying bank offers it for batch payments
 - [ ] More mechanics: gift with purchase, then instant win and prize draws (designed, not built)
 
 ## Phase 4: Client self-serve (subscription product)
