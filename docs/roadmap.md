@@ -34,7 +34,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Deploy `salesforce/force-app` and the legacy trigger guard to production
 - [ ] Production Vercel project on Pro, custom domain, rate-limit rule, uptime monitor on `/api/health`
 - [ ] Each campaign's own look and feel (decisions.md #10). Needed before the first production campaign, because that campaign must look like its brand, not like the hub.
-  - [ ] Designed entry page served by the hub, claim form in place, scripts stripped; proven with AEG NZ in the sandbox
+  - [x] Designed entry page served by the hub, claim form in place, scripts stripped; proven with AEG NZ in the sandbox (31 Oct 2026, PR #2)
+  - [ ] Private claim page and favicon carry the campaign look (done in PR #2); email logo still to do
   - [ ] Staff upload a design to a campaign (console), stored in the public asset store, not Salesforce
   - [ ] Campaign logo and colour in emails
 - [ ] Campaign addresses: the hub serves each campaign on its own domain and on a yourpromotion.com.au backup address; the builder adds both to Vercel (decisions.md #10). Check how yourpromotion.com.au's DNS is run, since it also carries the existing Experience site.
