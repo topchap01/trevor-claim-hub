@@ -63,9 +63,18 @@ jobs:
         run: |
           if [ -z "$SF_SANDBOX_JWT_KEY" ]; then echo "::warning title=Apex tests not run::Sandbox secrets are not set, so this run did not deploy or test any Apex. Set SF_SANDBOX_* secrets."; exit 0; fi
           echo "$SF_SANDBOX_JWT_KEY" > server.key
-          sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
-            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci
+          # On failure, put Salesforce's reason on the check itself (secrets stay masked), so it can be read without the log
+          set +e
+          OUT=$(sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
+            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci --json 2>&1)
+          STATUS=$?
+          set -e
           rm server.key
+          if [ $STATUS -ne 0 ]; then
+            REASON=$(printf '%s' "$OUT" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log([j.name,j.message].filter(Boolean).join(": ").replace(/\s+/g," ").slice(0,600))}catch{console.log(s.replace(/\s+/g," ").slice(-600))}})')
+            echo "::error title=Sandbox sign-in failed::$REASON"
+            exit 1
+          fi
       - name: Validate deploy with the hub tests
         if: ${{ env.SKIP != 'true' }}
         working-directory: salesforce
