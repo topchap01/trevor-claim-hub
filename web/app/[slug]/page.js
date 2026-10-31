@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import parse from 'html-react-parser';
-import { campaign, okSlug } from '@/lib/sf';
+import { campaign, hub, okSlug, okToken } from '@/lib/sf';
+import { claimCookieName, welcomeBackLine } from '@/lib/returning';
 import { loadDesign, themeVars, fill } from '@/lib/designs';
 import ClaimForm from './ClaimForm';
 import ResendForm from './ResendForm';
@@ -47,7 +49,32 @@ export async function generateViewport({ params }) {
   return { width: 'device-width', initialScale: 1, themeColor: design?.theme?.colors?.brand || c.brandColor || '#041E50' };
 }
 
+/** The claim remembered on this phone for this promotion, if its link still works. Never blocks the page. */
+async function returning(paramsP) {
+  const { slug } = await paramsP;
+  if (!okSlug(slug)) return null;
+  const token = (await cookies()).get(claimCookieName(slug))?.value;
+  if (!okToken(token)) return null;
+  const { status, data } = await hub(`claims/${token}`);
+  if (status !== 200 || data?.slug !== slug) return null; // a newer link was sent, or Salesforce is down: show the page as usual
+  return { token, firstName: data.firstName, line: welcomeBackLine(data) };
+}
+
 // ---------------------------------------------------------------- hub blocks, shared by every campaign
+
+/** Top of the page for someone who has claimed on this phone before: one button back to their claim. */
+function WelcomeBack({ back, slug }) {
+  if (!back) return null;
+  return (
+    <section className="welcomeback" aria-label="Your claim">
+      <div className="inner">
+        <p><b>{back.firstName ? `Welcome back, ${back.firstName}.` : 'Welcome back.'}</b> {back.line}</p>
+        <a className="btn" href={`/c?token=${encodeURIComponent(back.token)}&s=${encodeURIComponent(slug)}`}>Open my claim</a>
+        {back.firstName && <p className="notyou">Not {back.firstName}? Make a new claim below.</p>}
+      </div>
+    </section>
+  );
+}
 
 function Tiers({ c }) {
   return (
@@ -112,14 +139,15 @@ function Terms({ c }) {
 // ---------------------------------------------------------------- pages
 
 export default async function CampaignPage({ params }) {
-  const { c, design } = await load(params);
+  const [{ c, design }, back] = await Promise.all([load(params), returning(params)]);
   const tz = c.timezone || 'Australia/Sydney';
-  return design ? <DesignedPage c={c} tz={tz} design={design} /> : <StandardPage c={c} tz={tz} />;
+  return design ? <DesignedPage c={c} tz={tz} design={design} back={back} /> : <StandardPage c={c} tz={tz} back={back} />;
 }
 
-function StandardPage({ c, tz }) {
+function StandardPage({ c, tz, back }) {
   return (
     <main>
+      <WelcomeBack back={back} slug={c.slug} />
       <section className="hero" style={{ background: c.brandColor || undefined }}>
         <div className="inner">
           <p className="eyebrow">{c.name}</p>
@@ -131,7 +159,7 @@ function StandardPage({ c, tz }) {
       <div className="wrap">
         <HowItWorks c={c} />
         <Claim c={c} />
-        <ResendForm slug={c.slug} />
+        <ResendForm slug={c.slug} supportEmail={c.supportEmail} />
         <KeyDates c={c} tz={tz} />
         <Terms c={c} />
       </div>
@@ -140,8 +168,11 @@ function StandardPage({ c, tz }) {
   );
 }
 
-/** The studio's page, with the hub's blocks placed where its slots say. The claim form is always on the page. */
-function DesignedPage({ c, tz, design }) {
+/**
+ * The studio's page, with the hub's blocks placed where its slots say.
+ * The claim form and the "Already claimed?" box are always on the page, and "Welcome back" always sits above the design.
+ */
+function DesignedPage({ c, tz, design, back }) {
   const top = c.tiers.reduce((m, t) => Math.max(m, t.amount || 0), 0);
   const html = fill(design.html, {
     name: c.name, headline: c.headline, brandName: c.brandName, retailers: c.retailers, supportEmail: c.supportEmail,
@@ -150,13 +181,14 @@ function DesignedPage({ c, tz, design }) {
   });
   const blocks = {
     'claim-form': <Claim c={c} />,
-    resend: <ResendForm slug={c.slug} />,
+    resend: <ResendForm slug={c.slug} supportEmail={c.supportEmail} />,
     'how-it-works': <HowItWorks c={c} />,
     tiers: <Tiers c={c} />,
     'key-dates': <KeyDates c={c} tz={tz} />,
     terms: <Terms c={c} />,
   };
   const placedForm = /<hub-slot name="claim-form"><\/hub-slot>/.test(html);
+  const placedResend = /<hub-slot name="resend"><\/hub-slot>/.test(html); // the form's "Open your claim" link points to it
   const content = parse(html, {
     replace(node) {
       if (node.type !== 'tag' || node.name !== 'hub-slot') return undefined;
@@ -167,8 +199,10 @@ function DesignedPage({ c, tz, design }) {
   return (
     <main className="design" style={themeVars(design.theme)}>
       {design.css && <style dangerouslySetInnerHTML={{ __html: design.css }} />}
+      <WelcomeBack back={back} slug={c.slug} />
       {content}
       {!placedForm && <div className="hub-slot hub-slot-claim-form">{blocks['claim-form']}</div>}
+      {!placedResend && <div className="hub-slot hub-slot-resend">{blocks.resend}</div>}
       <Chat slug={c.slug} />
     </main>
   );

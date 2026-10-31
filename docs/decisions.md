@@ -70,6 +70,17 @@ Short records of the choices that shape the code, and what would change them.
 
 **9. Emails go through an outbox object, with one dispatcher.** Every email is a record before it is sent, so nothing is lost when sending fails, staff can see what each claimant received, and changes made close together are merged into one email. The dispatcher locks the rows it sends (`FOR UPDATE`, status re-checked). A delayed job only re-queues itself when no other dispatcher is waiting, so overlapping runs never send an email twice and job chains never multiply.
 
+**10. Returning claimants: make the way back obvious, and remember the claim on the phone.** Decided by Mark, 31 October 2026: whatever is easiest for the least confident claimant.
+- *The problem:* the claim link in the email is the only way into a claim. People lose the email, come back to the promotion page and either fill in the form again or give up.
+- *What the hub does:*
+  - **Welcome back.** Making or opening a claim stores its link code in a cookie on that phone, one per promotion (`hub_claim_<slug>`: HttpOnly, Secure, SameSite=Lax, 180 days). The promotion page then opens with "Welcome back, Sam", one line on where the claim is up to, and an "Open my claim" button. A link that has been replaced by a newer one is ignored, so the bar simply doesn't show.
+  - **No dead end on the form.** If someone claims again with the same email, lodge refuses with `code: "duplicate_email"` and the form shows "You already have a claim with sam@example.com" and one button that emails the link. No retyping.
+  - **"Already claimed? Open your claim"** at the top of the claim form, jumping to the resend box. Designed pages get the resend box even if their design leaves it out.
+  - **After sending a link:** the message says it can take a few minutes, to check junk or spam, gives the support address, and says only the newest link works.
+  - **Same mobile, different email:** a second claim on a promotion from the same mobile (matched on the last 8 digits, so any format) is flagged for review, not refused. It is usually a mistyped email on the first claim. This follows #7.
+- *Accepted risk:* on a shared phone, someone else in the household can open the claim from the bar. The bar names the claimant ("Not Sam? Make a new claim below"), the bank details are masked to the last 3 digits, and changing them needs a code emailed to the claimant. The same exposure already exists through the phone's browser history, which holds the claim link.
+- *Revisit if* a client objects to the shared-phone exposure, or when the claim link moves fully into the cookie (roadmap phase 3).
+
 ## Known follow-ups
 
 - Split `ClaimHubService.lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render` into smaller methods. Code Analyzer flags their complexity. They are fully tested, so the refactor is safe to do.
@@ -79,4 +90,4 @@ Short records of the choices that shape the code, and what would change them.
 - Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
 - Automated invoice file retention (an S3 lifecycle rule once on S3).
 - A nightly reconcile job: Blob files no receipt points to (left behind when Salesforce timed out), and receipts whose file is missing.
-- Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs.
+- Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs. The cookie now exists (#10); what's left is the claim page reading it instead of `?token=`.

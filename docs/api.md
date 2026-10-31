@@ -6,7 +6,7 @@ There are two layers:
 
 Only the web app can call Salesforce. It signs in as the integration user, whose only permission is access to `ClaimHubApi`.
 
-All bodies are JSON. Errors are always `{"error": "<plain English, safe to show the claimant>"}`, with these statuses:
+All bodies are JSON. Errors are always `{"error": "<plain English, safe to show the claimant>"}`, with these statuses. A refusal the web app acts on, not just shows, also carries a `code`: today only `"duplicate_email"` (409 on lodge), which makes the claim form offer the claim's link in one tap.
 
 | Status | Meaning |
 |---|---|
@@ -29,7 +29,7 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 | `GET /api/campaign/{slug}` | `GET campaigns/{slug}` | Public promotion details: products, tiers, dates, rules. |
 | `POST /api/campaign/{slug}/claim` | `POST campaigns/{slug}/claims` | Lodge a claim. Returns `{token}`. |
 | `POST /api/campaign/{slug}/chat` | `POST campaigns/{slug}/chat` | Help assistant, before a claim exists. |
-| `GET /api/claim/{token}` | `GET claims/{token}` | The claimant's view of their claim. |
+| `GET /api/claim/{token}` | `GET claims/{token}` | The claimant's view of their claim. On success the web app sets the `hub_claim_<slug>` cookie, so this phone remembers the claim (decisions.md #10). Lodging sets it too. |
 | `POST /api/claim/{token}/serial` | `POST claims/{token}/serial` | `{productId, serial, pnc?}` |
 | `POST /api/claim/{token}/receipt` | `POST claims/{token}/receipt` | `{base64, contentType, fileName}`. The web app stores the file and adds `fileKey`. |
 | `POST /api/claim/{token}/plate` | `POST claims/{token}/plate` | `{base64, contentType}`. Returns `{serial, pnc, model, readable}` or `{error}`. |
@@ -75,7 +75,8 @@ Each check refuses with a 4xx before anything is saved.
 
 After saving, these are flagged for the team but not refused:
 - a third or later claim from one connection in 24 hours;
-- a bank account already on another claim in the promotion.
+- a bank account already on another claim in the promotion;
+- a mobile already on another claim in the promotion, matched on its last 8 digits (usually a mistyped email on the first claim).
 
 ## Claim view
 

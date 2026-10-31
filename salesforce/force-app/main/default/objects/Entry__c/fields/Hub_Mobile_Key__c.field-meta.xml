@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Hub_Mobile_Key__c</fullName>
+    <description>Claim hub: last 8 digits of the claimant's mobile, whatever format it was typed in. Indexed so the hub can flag a second claim from the same mobile on a promotion (usually a mistyped email on the first claim).</description>
+    <externalId>true</externalId>
+    <label>Hub mobile key</label>
+    <length>15</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

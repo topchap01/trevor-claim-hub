@@ -50,6 +50,7 @@
     <fieldPermissions><editable>true</editable><field>Promotional_Campaign__c.Hub_Timezone__c</field><readable>true</readable></fieldPermissions>
     <fieldPermissions><editable>false</editable><field>Entry__c.Hub_Client_IP_Hash__c</field><readable>true</readable></fieldPermissions>
     <fieldPermissions><editable>false</editable><field>Entry__c.Hub_Dedupe_Key__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Entry__c.Hub_Mobile_Key__c</field><readable>true</readable></fieldPermissions>
     <fieldPermissions><editable>false</editable><field>Entry_Product__c.Hub_Serial_Key__c</field><readable>true</readable></fieldPermissions>
     <fieldPermissions><editable>false</editable><field>Entry_Receipt__c.Hub_File_Key__c</field><readable>true</readable></fieldPermissions>
     <fieldPermissions><editable>false</editable><field>Entry_Receipt__c.Hub_Has_File__c</field><readable>true</readable></fieldPermissions>

@@ -13,6 +13,9 @@ public without sharing class ClaimHubService {
         public Id flagEntry; public String flagAction; public String flagDetail;
         /** A security code whose wrong guess must still count after the API rolls the request back. */
         public Id failedOtp;
+        /** A stable name for refusals the web app acts on (not just shows), e.g. duplicate_email. */
+        public String code;
+        public HubException withCode(String c) { code = c; return this; }
         public HubException flag(Id entryId, String action, String detail) { flagEntry = entryId; flagAction = action; flagDetail = detail == null ? null : detail.left(255); return this; }
         public HubException(Integer status, String message) { this(message); this.status = status; }
     }
@@ -137,7 +140,7 @@ public without sharing class ClaimHubService {
 
         // One claim per person: same email on this promotion. The unique duplicate key also stops two arriving at once.
         if (![SELECT Id FROM Entry__c WHERE Promotional_Campaign__c = :c.Id AND Consumer_Email_Stamp__c = :email LIMIT 1].isEmpty()) {
-            throw new HubException(409, DUPLICATE_EMAIL);
+            throw new HubException(409, DUPLICATE_EMAIL).withCode('duplicate_email');
         }
 
         // Many claims from one connection: refuse above the daily limit, flag from the third
@@ -203,7 +206,8 @@ public without sharing class ClaimHubService {
             Consumer_Mobile_Stamp__c = mobile, Hub_Last_Activity__c = now, Purchase_Price__c = spend > 0 ? spend : null,
             // The claim form cannot be submitted without ticking "I've read the terms"
             I_have_read_and_accepted_the_promotion__c = true,
-            Hub_Dedupe_Key__c = hash(c.Id + ':' + email), Hub_Client_IP_Hash__c = ipHash, Access_Token__c = ClaimAccessToken.newToken());
+            Hub_Dedupe_Key__c = hash(c.Id + ':' + email), Hub_Mobile_Key__c = mobileKey(mobile),
+            Hub_Client_IP_Hash__c = ipHash, Access_Token__c = ClaimAccessToken.newToken());
         // Same stamps the old entry trigger sets (it only finds campaigns by record type): weekly reports and the C4C feed read them
         if (e.Created_At_Datetime__c == null) {
             e.Created_At_Datetime__c = now;
@@ -213,7 +217,7 @@ public without sharing class ClaimHubService {
         if (bank != null) stampBank(e, l);
         try { insert e; }
         catch (DmlException ex) {
-            if (ex.getDmlType(0) == StatusCode.DUPLICATE_VALUE) throw new HubException(409, DUPLICATE_EMAIL);
+            if (ex.getDmlType(0) == StatusCode.DUPLICATE_VALUE) throw new HubException(409, DUPLICATE_EMAIL).withCode('duplicate_email');
             throw ex;
         }
 
@@ -247,6 +251,7 @@ public without sharing class ClaimHubService {
             ', cashback ' + (cashback == null ? 'none' : money(cashback, c.Hub_Country__c) + (range.Percentage__c != null ? ' (' + range.Percentage__c + '%)' : '')));
         if (fromIp + 1 >= ClaimHubSettings.IP_FLAG_AT) ClaimHubLog.event(e.Id, 'System', 'Needs review: several claims from one connection', (fromIp + 1) + ' claims from the same connection in 24 hours');
         if (bank != null) flagSharedBank(e.Id, c.Id, l);
+        flagSharedMobile(e.Id, c.Id, e.Hub_Mobile_Key__c);
         Entry__c fresh = load(e.Id);
         recompute(fresh, null);
         ClaimHubNotifier.enqueueNow(fresh.Id, 'LODGED');
@@ -624,7 +629,7 @@ public without sharing class ClaimHubService {
         e.Consumer_Bank_Account_Number__c = l.Bank_Account_Number__c;
     }
 
-    public static final String DUPLICATE_EMAIL = 'There is already a claim with this email address. Use "Get my link" to open it.';
+    public static final String DUPLICATE_EMAIL = 'You already have a claim with this email address. We can email you a link to open it.';
     public static final String DUPLICATE_SERIAL = 'This serial number is already on another claim. Our team has been told and will be in touch.';
 
     /** A positive amount from what the claimant typed ("$4,299.00", 4299), or null. */
@@ -673,6 +678,24 @@ public without sharing class ClaimHubService {
         List<String> names = new List<String>();
         for (Entry__c o : others) names.add(o.Name);
         ClaimHubLog.event(entryId, 'System', 'Needs review: bank account on another claim', 'Same account as ' + String.join(names, ', '));
+    }
+
+    /**
+     * Flags (does not refuse) a claim whose mobile is already on another claim in the same promotion.
+     * Usually a claimant who mistyped their email on the first claim, never got its link, and claimed again.
+     */
+    static void flagSharedMobile(Id entryId, Id campaignId, String key) {
+        if (String.isBlank(key)) return;
+        List<String> names = new List<String>();
+        for (Entry__c o : [SELECT Name FROM Entry__c WHERE Promotional_Campaign__c = :campaignId AND Id != :entryId AND Hub_Mobile_Key__c = :key LIMIT 3]) names.add(o.Name);
+        if (names.isEmpty()) return;
+        ClaimHubLog.event(entryId, 'System', 'Needs review: mobile on another claim', 'Same mobile as ' + String.join(names, ', ') + '. Check for a mistyped email.');
+    }
+
+    /** Last 8 digits of a mobile, so 0412 345 678, +61412345678 and 0412-345-678 match. */
+    public static String mobileKey(String mobile) {
+        String d = mobile == null ? '' : mobile.replaceAll('[^0-9]', '');
+        return d.length() < 8 ? null : d.right(8);
     }
 
     static String req(Map<String, Object> m, String key) {
