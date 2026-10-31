@@ -55,7 +55,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
   - [x] store picked from the campaign's list, with store suburb and (AU) state (#13);
   - [x] NZ mobile also written to `Consumer_Contact_Number__c` (#13);
   - [x] Apex tests prove each field reaches the record the C4C feed reads; the smoke test sends and checks them (#13);
-  - [ ] switch both settings on for the two Electrolux campaigns in Wizard, deploy, and run the smoke test on each;
+  - [x] deployed to Wizard from #13 (deploy ID 0Af9p00000ZhwFtCAJ, 69 of 69 tests), address and store switched on for the Electrolux cross category, Electrolux kitchen refresh and AEG NZ demo campaigns, and the smoke test passed on all three (31 Oct 2026, *Deploy to Wizard* job). **Wizard is ahead of `main` until #13 is merged.**
   - [ ] marketing opt-in tick, once Mark settles the wording.
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
