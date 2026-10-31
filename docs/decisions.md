@@ -31,6 +31,7 @@ Short records of the choices that shape the code, and what would change them.
   - Sydney region.
   - Preview deployments per pull request.
   - Private Blob storage alongside.
+- *Plan:* Pro (Mark, 31 Oct 2026).
 - *Alternative:* any Node host. The app uses no Vercel-only APIs apart from `@vercel/blob`, which sits behind `web/lib/files.js`.
 
 **3. Rules live in Apex; the web app holds no state.**
@@ -69,6 +70,12 @@ Short records of the choices that shape the code, and what would change them.
 **8. Bank changes need an emailed code.** SMS would be stronger against a compromised mailbox, but needs an SMS provider. *Revisit for* high-value campaigns.
 
 **9. Emails go through an outbox object, with one dispatcher.** Every email is a record before it is sent, so nothing is lost when sending fails, staff can see what each claimant received, and changes made close together are merged into one email. The dispatcher locks the rows it sends (`FOR UPDATE`, status re-checked). A delayed job only re-queues itself when no other dispatcher is waiting, so overlapping runs never send an email twice and job chains never multiply.
+
+**10. Each campaign has its own look and feel. Entry pages are not standardised.** (Mark, 31 Oct 2026)
+- Every campaign's consumer pages carry that campaign's own design, as the current microsites do. One template with a swappable colour and logo is not enough.
+- What stays common is the claim engine: rules, checks, the claim record, emails, payments.
+- *Still open (roadmap):* how a campaign's design is built and served by the hub, and how its pages are addressed.
+- *Found while scoping:* the hub's security policy allows images and fonts only from its own address, and every page is marked noindex. Both must change per campaign before go-live (production-checklist.md).
 
 ## Known follow-ups
 

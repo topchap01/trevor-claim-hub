@@ -12,7 +12,9 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] PNC compulsory on Electrolux campaigns?
 - [ ] Collect address, gender and age? (Some weekly reports use them.)
 - [ ] Invoice retention period (suggested: 12 months after payment).
-- [ ] Vercel Pro (needed for commercial use, team members, rate limiting, a custom domain).
+- [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
+- [ ] Campaign addresses: how each campaign's entry page is addressed (Trevor domain, the campaign's own domain, or both) and which Trevor domain. See decisions.md #10.
+- [ ] How each campaign's own look is built and served. See decisions.md #10.
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
 
@@ -31,6 +33,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Production integration user, External Client App and new key pair
 - [ ] Deploy `salesforce/force-app` and the legacy trigger guard to production
 - [ ] Production Vercel project on Pro, custom domain, rate-limit rule, uptime monitor on `/api/health`
+- [ ] Each campaign's own look and feel (decisions.md #10). Needed before the first production campaign, because that campaign must look like its brand, not like the hub.
+- [ ] Campaign addresses: the hub serves each campaign on its own address, and the builder adds the domain to Vercel (decisions.md #10)
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
 - [ ] Confirm weekly client reports show hub claims
@@ -57,7 +61,7 @@ The pipeline: **Quentin drafts the terms, the hub reads them and builds the camp
 - [ ] **Branding per client:**
   - their own web address (for example claims.brand.com);
   - an email domain verified for sending;
-  - theme.
+  - each campaign's own look and feel (decisions.md #10; moved forward to Phase 2).
 - [ ] **Tiers.**
   - *Self-serve:* the client approves claims.
   - *Managed:* Trevor approves claims and pays claimants.
