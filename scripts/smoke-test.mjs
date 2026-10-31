@@ -31,12 +31,17 @@ const min = Math.max(1, Number(c.body.minProducts) || 1);
 const spendEach = Math.ceil((Number(c.body.minSpend) || 0) / min) + 100;
 const items = c.body.products.slice(0, min).map((p) => ({ promoProductId: p.id, price: spendEach }));
 const person = { firstName: 'Smoke', lastName: 'Test', email: `smoke.test.${run}@example.com`, mobile: '021 555 0199', acceptedTerms: true };
-const bank = c.body.country === 'NZ' ? { name: 'S Test', account: '12-3140-0123456-00' } : { name: 'S Test', bsb: '062000', account: '12345678' };
+const bank = c.body.country === 'NZ' ? { name: 'S Test', account: '12-3140-0123452-00' } : { name: 'S Test', bsb: '062000', account: '12345678' };
 
 check('refuses a missing name', (await call('POST', `campaign/${SLUG}/claim`, { ...person, firstName: '', products: items })).status === 400);
 check('refuses a product from another promotion', (await call('POST', `campaign/${SLUG}/claim`, { ...person, products: [{ promoProductId: 'a0X000000000000AAA' }] })).status === 400);
 check('refuses a claim without the terms ticked', (await call('POST', `campaign/${SLUG}/claim`, { ...person, acceptedTerms: false, products: items })).status === 400);
 check('refuses bad JSON', (await fetch(`${BASE}/api/campaign/${SLUG}/claim`, { method: 'POST', headers, body: 'nope' })).status === 400);
+const typo = c.body.country === 'NZ' ? { ...bank, account: '12-3140-0123453-00' } : null; // one digit off the made-up account
+if (typo) check('refuses an NZ account number that fails its check digit', (await call('POST', `campaign/${SLUG}/claim`, { ...person, products: items, bank: typo })).status === 400);
+const lookup = await call('GET', c.body.country === 'NZ' ? 'bank/NZ/123140' : 'bank/AU/062000');
+check('bank and branch lookup answers', lookup.status === 200 && typeof lookup.body.found === 'boolean', lookup);
+check('bank lookup refuses a bad code', (await call('GET', 'bank/NZ/12x')).status === 400);
 
 const lodged = await call('POST', `campaign/${SLUG}/claim`, { ...person, products: items, bank });
 check('lodges a claim', lodged.status === 200 && lodged.body.token, lodged);

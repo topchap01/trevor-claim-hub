@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Bank and branch registers the claim hub checks bank details against: Payments NZ Bank Branch Register (NZ) and the AusPayNet BSB directory (AU). Loaded monthly by scripts/load-bank-register.mjs. Public reference data, no personal data.</description>
+    <label>Hub Bank Branch</label>
+    <pluralLabel>Hub Bank Branches</pluralLabel>
+    <nameField><label>Bank and Branch</label><type>Text</type></nameField>
+    <sharingModel>ReadWrite</sharingModel>
+    <enableReports>true</enableReports>
+    <enableActivities>false</enableActivities>
+    <enableHistory>false</enableHistory>
+    <enableSearch>true</enableSearch>
+</CustomObject>

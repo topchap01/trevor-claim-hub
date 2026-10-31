@@ -15,7 +15,8 @@ The health route reports these counts:
 - `emailsFailedLastHour`;
 - `invoicesRead24h` and `invoicesNotRead24h`;
 - `claims24h`;
-- `flaggedForReview24h`.
+- `flaggedForReview24h`;
+- `bankRegisterRows`: rows per country in the bank registers. 0 means bank details are checked by format and check digit only (Salesforce API response; the web route returns counts of problems only).
 
 ## Common situations
 
@@ -38,6 +39,10 @@ The health route reports these counts:
 - The hub refuses this. The org's `Cant_update_bank_details_after_EFT` rule allows changes only while EFT status is Pending.
 - If the payment fails, the claimant is emailed and can change the details. The hub resets the status to Pending, saves the details, then sets *EFT Updated* for the payments team.
 
+**Bank details not confirmed (flagged).** The registers don't list the claimant's bank and branch or BSB, or the BSB takes no electronic payments. The claim was accepted. Check the details against the claimant's invoice or ask them; a brand-new branch can be missing until the next monthly load. A wrong NZ number never gets this far: the form refuses it.
+
+**Claimant says the form refuses their NZ account number.** The number failed its bank's check digit, so a digit is wrong or two are swapped. Ask them to copy it from their banking app. If they're sure, send the number (not the name) to the developer: it means a bank has changed its numbering and `ClaimHubBank` needs updating.
+
 **Duplicate or second-quality serial flagged.** Shown in the console with the other claim's number. Decide, then approve or reject the claim with a reason.
 
 **The web app can't reach Salesforce.**
@@ -52,6 +57,11 @@ The health route reports these counts:
 3. Check what was read and every issue raised.
 4. Set the dates and web address name. Optionally compare products with a past campaign.
 5. Create the campaign. Open the claim page and run one test claim.
+
+**Refresh the bank registers** monthly, after AusPayNet's update on the first NSW business day, and after a sandbox refresh:
+1. Download the Payments NZ Bank Branch Register (.xlsx) and the AusPayNet BSB directory, full version (.txt), plus its *Key to Abbreviations* (.csv).
+2. Run `node scripts/load-bank-register.mjs --org <org> --nz <register>.xlsx --au BSBDirectoryFull.txt --au-key <key>.csv`. Add `--dry-run` first to check the row counts.
+3. It upserts every row, then deletes rows the registers no longer list. It stops without changing anything if a file has suspiciously few rows. Production needs `--approved-for-production`.
 
 **Schedule background jobs** after a deploy or sandbox refresh:
 

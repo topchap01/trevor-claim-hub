@@ -24,6 +24,7 @@ public without sharing class ClaimHubMonitor implements Schedulable {
         Integer readsDay = [SELECT COUNT() FROM Entry_Receipt__c WHERE Hub_Has_File__c = true AND LastModifiedDate >= :dayAgo];
         Integer notReadDay = [SELECT COUNT() FROM Entry_Receipt__c WHERE Hub_Has_File__c = true AND OCR_Status__c = 'Not read' AND LastModifiedDate >= :dayAgo];
         Integer needsReview = [SELECT COUNT() FROM Claim_Event__c WHERE Action__c LIKE 'Needs review%' AND CreatedDate >= :dayAgo];
+        Map<String, Object> registers = ClaimHubBank.registerCounts();
         List<String> problems = new List<String>();
         if (overdue > 0) problems.add(overdue + ' email' + (overdue == 1 ? '' : 's') + ' waiting more than 30 minutes to send');
         // Alerts look at the last hour so one failure is reported once, not every hour for a day
@@ -31,7 +32,9 @@ public without sharing class ClaimHubMonitor implements Schedulable {
         if (readsDay >= 5 && notReadDay * 100 / readsDay >= 30) problems.add(notReadDay + ' of ' + readsDay + ' invoices could not be read automatically in the last 24 hours (is Claude reachable?)');
         return new Map<String, Object>{ 'ok' => problems.isEmpty(), 'checkedAt' => now, 'problems' => problems,
             'emailsOverdue' => overdue, 'emailsFailedLastHour' => failedHour, 'emailsFailed24h' => failedDay, 'claims24h' => claimsDay,
-            'invoicesRead24h' => readsDay, 'invoicesNotRead24h' => notReadDay, 'flaggedForReview24h' => needsReview };
+            'invoicesRead24h' => readsDay, 'invoicesNotRead24h' => notReadDay, 'flaggedForReview24h' => needsReview,
+            // Rows in the bank registers. 0 means bank details are checked by format and check digit only.
+            'bankRegisterRows' => registers };
     }
 
     /** Emails the alert address if the snapshot shows a problem. Returns the problems found. */

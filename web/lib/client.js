@@ -62,3 +62,22 @@ export async function prepareFile(file, maxSide = 1600) {
   const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/jpeg', 0.82));
   return { base64: await readB64(blob), contentType: 'image/jpeg', fileName: (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg' };
 }
+
+/** The six digits that name a bank and branch: an NZ account's first six, or an AU BSB. Null until all six are typed. */
+export function bankPrefix(country, value) {
+  const d = String((country === 'NZ' ? value?.account : value?.bsb) || '').replace(/\D/g, '');
+  return d.length >= 6 ? d.slice(0, 6) : null;
+}
+
+/** What the form says under the bank fields once the bank and branch are looked up. Null to say nothing. */
+export function bankLine(country, r) {
+  if (!r) return null;
+  if (r.found) {
+    const where = [r.bankName, r.branchName].filter(Boolean).join(', ');
+    return { ok: r.electronic !== false, text: r.electronic === false ? `${where}. This branch can't receive electronic payments, so please check the BSB.` : where };
+  }
+  if (!r.registerLoaded) return null;
+  return { ok: false, text: country === 'NZ'
+    ? 'We don\'t recognise that bank and branch. Check the first six digits; if they\'re right, carry on.'
+    : 'We don\'t recognise that BSB. Check it; if it\'s right, carry on.' };
+}
