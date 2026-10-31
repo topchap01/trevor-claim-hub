@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, money, bestTier } from '@/lib/client';
 import BankFields from '@/components/BankFields';
+import { SendLinkButton } from './ResendForm';
 
 const blankRow = () => ({ id: Math.random().toString(36).slice(2), promoProductId: '', price: '' });
 
@@ -16,6 +17,7 @@ export default function ClaimForm({ campaign }) {
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [existing, setExisting] = useState(''); // the email a claim already exists for, so we offer its link in one tap
 
   const byCategory = useMemo(() => {
     const m = {};
@@ -35,6 +37,7 @@ export default function ClaimForm({ campaign }) {
   async function submit(e) {
     e.preventDefault();
     setError('');
+    setExisting('');
     if (chosen.length < min) return setError(`Choose at least ${min} participating appliances.`);
     if (bySpend && chosen.some((r) => !(Number(r.price) > 0))) return setError('Add the price you paid for each appliance. The cashback depends on your total spend.');
     if (shortBy) return setError(`This promotion needs a combined spend of at least ${cur(campaign.minSpend)}. Your total is ${cur(spend)}.`);
@@ -47,9 +50,10 @@ export default function ClaimForm({ campaign }) {
         products: chosen.map((r) => ({ promoProductId: r.promoProductId, price: r.price || null })),
         bank: addBank ? bank : null,
       });
-      router.push(`/c?token=${encodeURIComponent(out.token)}&new=1`);
+      router.push(`/c?token=${encodeURIComponent(out.token)}&s=${encodeURIComponent(campaign.slug)}&new=1`);
     } catch (err) {
-      setError(err.message);
+      if (err.data?.code === 'duplicate_email') setExisting(me.email.trim());
+      else setError(err.message);
       setBusy(false);
     }
   }
@@ -58,6 +62,7 @@ export default function ClaimForm({ campaign }) {
     <form className="card" onSubmit={submit} noValidate>
       <h2>Make a claim</h2>
       <p className="sub">You can add your invoice and serial numbers after you submit.</p>
+      <p className="returning">Already claimed? <a href="#already-claimed">Open your claim</a></p>
 
       <label>What did you buy?</label>
       {rows.map((r, i) => (
@@ -110,6 +115,12 @@ export default function ClaimForm({ campaign }) {
       </label>
 
       {error && <div className="err" role="alert">{error}</div>}
+      {existing && (
+        <div className="note" role="alert">
+          <b>You already have a claim with {existing}.</b> You don't need to claim again. We'll email you the link to it.
+          <SendLinkButton slug={campaign.slug} email={existing} supportEmail={campaign.supportEmail} />
+        </div>
+      )}
       <div style={{ marginTop: 16 }}><button className="btn block" disabled={busy}>{busy ? <span><span className="spinner" /> Sending your claim…</span> : 'Submit my claim'}</button></div>
     </form>
   );

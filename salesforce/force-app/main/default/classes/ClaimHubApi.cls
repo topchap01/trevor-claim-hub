@@ -5,6 +5,7 @@
  *   POST /claimhub/v1/campaigns/{slug}/claims
  *   GET  /claimhub/v1/claims/{token}
  *   POST /claimhub/v1/claims/{token}/serial | receipt | plate | code | bank
+ *   GET  /claimhub/v1/banks/{NZ|AU}/{6 digits}   bank and branch for the claim form (register data only)
  *   POST /claimhub/v1/resend
  *   GET  /claimhub/v1/files/{ticket}      staff invoice link (short-lived ticket from ClaimHubConsole.invoiceLink)
  *   GET  /claimhub/v1/health              uptime check
@@ -46,7 +47,9 @@ global without sharing class ClaimHubApi {
             if (ex.flagEntry != null) ClaimHubLog.event(ex.flagEntry, 'System', ex.flagAction, ex.flagDetail);
             if (ex.failedOtp != null) countFailedCode(ex.failedOtp);
             res.statusCode = ex.status;
-            res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, Object>{ 'error' => ex.getMessage() }));
+            Map<String, Object> err = new Map<String, Object>{ 'error' => ex.getMessage() };
+            if (ex.code != null) err.put('code', ex.code);
+            res.responseBody = Blob.valueOf(JSON.serialize(err));
         } catch (TypeException ex) {
             // A field of the wrong type (e.g. products not a list): the caller's mistake, not ours
             if (sp != null) Database.rollback(sp);
@@ -90,6 +93,7 @@ global without sharing class ClaimHubApi {
             if (p[2] == 'chat') return ClaimHubAssistant.chatForClaim(p[1], body);
             if (p[2] == 'bank') return ClaimHubService.changeBank(p[1], body);
         }
+        if (head == 'banks' && p.size() == 3 && method == 'GET') return ClaimHubBank.lookup(p[1], p[2]);
         if (head == 'resend' && method == 'POST') return ClaimHubService.resendLink(body);
         if (head == 'files' && p.size() == 2 && method == 'GET') return ClaimHubFiles.resolve(p[1]);
         if (head == 'health' && p.size() == 1 && method == 'GET') return ClaimHubMonitor.snapshot();

@@ -34,3 +34,21 @@ test('when: dates in the promotion time zone', () => {
   assert.equal(when('2027-01-31T10:59:00Z', 'Pacific/Auckland'), '11:59pm 31 January 2027');
   assert.equal(when('2027-01-31T10:59:00Z', 'Pacific/Auckland', false), '31 January 2027');
 });
+
+test('bankPrefix: six digits from the NZ account or the AU BSB', async () => {
+  const { bankPrefix } = await import('../lib/client.js');
+  assert.equal(bankPrefix('NZ', { account: '12-3140-02' }), '123140');
+  assert.equal(bankPrefix('NZ', { account: '12-314' }), null);
+  assert.equal(bankPrefix('AU', { bsb: '062-000', account: '' }), '062000');
+  assert.equal(bankPrefix('AU', { bsb: '06200' }), null);
+  assert.equal(bankPrefix('AU', {}), null);
+});
+
+test('bankLine: names the bank, warns when it is unknown, quiet without a register', async () => {
+  const { bankLine } = await import('../lib/client.js');
+  assert.deepEqual(bankLine('NZ', { found: true, bankName: 'ASB Bank', branchName: 'Queen Street', electronic: true }), { ok: true, text: 'ASB Bank, Queen Street' });
+  assert.equal(bankLine('AU', { found: true, bankName: 'Example Bank', branchName: 'Paper', electronic: false }).ok, false);
+  assert.equal(bankLine('NZ', { found: false, registerLoaded: true }).ok, false);
+  assert.equal(bankLine('NZ', { found: false, registerLoaded: false }), null);
+  assert.equal(bankLine('AU', null), null);
+});

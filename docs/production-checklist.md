@@ -12,6 +12,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
 - [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).
 - [x] **Campaign addresses.** Own domain per campaign, plus a backup on yourpromotion.com.au (decisions.md #10).
+- [ ] **Confirmation of Payee for batch payments.** Ask Trevor's paying bank whether it is offered on payment file uploads or by API, in NZ and AU (decisions.md #11).
 
 ## Salesforce production changes
 
@@ -29,9 +30,19 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Run `scripts/apex/schedule-jobs.apex`.
 - [ ] Verify org-wide email addresses for each campaign sender, and check deliverability.
 - [ ] Assign `Claim_Hub_Admin` to the claims team.
+- [ ] Load the bank registers into `Hub_Bank_Branch__c` (decisions.md #11): `node scripts/load-bank-register.mjs --org <prod> --nz <Payments NZ .xlsx> --au BSBDirectoryFull.txt --au-key <key>.csv --approved-for-production`. Before the first load:
+  - confirm Payments NZ's terms allow the Bank Branch Register to be used this way;
+  - check production **data** storage has room for the rows (one per NZ branch and AU BSB; the January 2026 NZ register lists 3,296 branch numbers);
+  - load before the first live claim: until a register is loaded, an unknown NZ bank code or AU BSB is neither refused nor flagged;
+  - name who runs the monthly refresh (AusPayNet updates on the first NSW business day of each month).
 - [ ] **File storage is at 119% in production (−9,175 MB remaining).** The hub no longer adds invoice files to Salesforce, but the overage still needs a clean-up or more storage.
 - [ ] Recommended: move the Anthropic key from `Claude_Setting__mdt` to a Named Credential.
 - [ ] Recommended: ask Salesforce Support for a custom index on `Entry_Product__c.Serial_Number__c`. Duplicate checks against old-form claims scan about 42,000 rows today.
+
+## Testing gaps
+
+- [ ] **CI does not run Apex tests.** The `SF_SANDBOX_*` repository secrets are not set, so the "validate deploy and run tests in the sandbox" job passes with the warning *Apex tests not run*. Every pull request so far, including #4 (returning claimants), has relied on someone running `scripts/run-apex-tests.sh wizard` by hand. Set the secrets (a CI connected app in Wizard with JWT bearer) so the job actually deploys and tests.
+- [ ] **Returning claimants (#4) in Wizard, by hand in a phone browser.** Deployed and Apex-tested on 31 Oct 2026 (62 of 62), and the same-mobile flag is confirmed. Still to walk through on the sandbox address: lodge, open the promotion page again (expect "Welcome back"), claim again with the same email (expect the one-tap link), and claim with a new email and the same mobile (expect the review flag in the console).
 
 ## Legacy issues found while testing (not caused by the hub)
 

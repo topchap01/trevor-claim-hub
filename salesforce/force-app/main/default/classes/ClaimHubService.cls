@@ -13,6 +13,9 @@ public without sharing class ClaimHubService {
         public Id flagEntry; public String flagAction; public String flagDetail;
         /** A security code whose wrong guess must still count after the API rolls the request back. */
         public Id failedOtp;
+        /** A stable name for refusals the web app acts on (not just shows), e.g. duplicate_email. */
+        public String code;
+        public HubException withCode(String c) { code = c; return this; }
         public HubException flag(Id entryId, String action, String detail) { flagEntry = entryId; flagAction = action; flagDetail = detail == null ? null : detail.left(255); return this; }
         public HubException(Integer status, String message) { this(message); this.status = status; }
     }
@@ -137,7 +140,7 @@ public without sharing class ClaimHubService {
 
         // One claim per person: same email on this promotion. The unique duplicate key also stops two arriving at once.
         if (![SELECT Id FROM Entry__c WHERE Promotional_Campaign__c = :c.Id AND Consumer_Email_Stamp__c = :email LIMIT 1].isEmpty()) {
-            throw new HubException(409, DUPLICATE_EMAIL);
+            throw new HubException(409, DUPLICATE_EMAIL).withCode('duplicate_email');
         }
 
         // Many claims from one connection: refuse above the daily limit, flag from the third
@@ -189,7 +192,7 @@ public without sharing class ClaimHubService {
         Lead l = new Lead(FirstName = first, LastName = last, Email = email, MobilePhone = mobile, Company = 'None');
         if (country(c.Hub_Country__c) == 'NZ') l.Contact_Number__c = mobile;
         Map<String, Object> bank = (Map<String, Object>) req.get('bank');
-        if (bank != null) applyBank(l, bank, c.Hub_Country__c);
+        ClaimHubBank.Check bankCheck = bank != null ? applyBank(l, bank, c.Hub_Country__c) : null;
         insert l;
 
         Decimal cashback = range == null ? null : amountFor(range, spend);
@@ -203,7 +206,8 @@ public without sharing class ClaimHubService {
             Consumer_Mobile_Stamp__c = mobile, Hub_Last_Activity__c = now, Purchase_Price__c = spend > 0 ? spend : null,
             // The claim form cannot be submitted without ticking "I've read the terms"
             I_have_read_and_accepted_the_promotion__c = true,
-            Hub_Dedupe_Key__c = hash(c.Id + ':' + email), Hub_Client_IP_Hash__c = ipHash, Access_Token__c = ClaimAccessToken.newToken());
+            Hub_Dedupe_Key__c = hash(c.Id + ':' + email), Hub_Mobile_Key__c = mobileKey(mobile),
+            Hub_Client_IP_Hash__c = ipHash, Access_Token__c = ClaimAccessToken.newToken());
         // Same stamps the old entry trigger sets (it only finds campaigns by record type): weekly reports and the C4C feed read them
         if (e.Created_At_Datetime__c == null) {
             e.Created_At_Datetime__c = now;
@@ -213,7 +217,7 @@ public without sharing class ClaimHubService {
         if (bank != null) stampBank(e, l);
         try { insert e; }
         catch (DmlException ex) {
-            if (ex.getDmlType(0) == StatusCode.DUPLICATE_VALUE) throw new HubException(409, DUPLICATE_EMAIL);
+            if (ex.getDmlType(0) == StatusCode.DUPLICATE_VALUE) throw new HubException(409, DUPLICATE_EMAIL).withCode('duplicate_email');
             throw ex;
         }
 
@@ -246,7 +250,8 @@ public without sharing class ClaimHubService {
         ClaimHubLog.event(e.Id, 'Claimant', 'Lodged', items.size() + ' appliances' + (spend > 0 ? ', spend ' + money(spend, c.Hub_Country__c) : '') +
             ', cashback ' + (cashback == null ? 'none' : money(cashback, c.Hub_Country__c) + (range.Percentage__c != null ? ' (' + range.Percentage__c + '%)' : '')));
         if (fromIp + 1 >= ClaimHubSettings.IP_FLAG_AT) ClaimHubLog.event(e.Id, 'System', 'Needs review: several claims from one connection', (fromIp + 1) + ' claims from the same connection in 24 hours');
-        if (bank != null) flagSharedBank(e.Id, c.Id, l);
+        if (bank != null) { flagSharedBank(e.Id, c.Id, l); flagBankCheck(e.Id, bankCheck); }
+        flagSharedMobile(e.Id, c.Id, e.Hub_Mobile_Key__c);
         Entry__c fresh = load(e.Id);
         recompute(fresh, null);
         ClaimHubNotifier.enqueueNow(fresh.Id, 'LODGED');
@@ -514,7 +519,7 @@ public without sharing class ClaimHubService {
         otp.Used__c = true; update otp;
 
         Lead l = new Lead(Id = e.Customer__c);
-        applyBank(l, req, e.Promotional_Campaign__r.Hub_Country__c);
+        ClaimHubBank.Check bankCheck = applyBank(l, req, e.Promotional_Campaign__r.Hub_Country__c);
         // The org only lets bank details change while EFT status is Pending (rule Cant_update_bank_details_after_EFT).
         // After a failed payment: back to Pending, change the details, then mark EFT Updated so the payments team re-sends.
         Boolean wasFailed = stage(e) == 'payment_failed' || e.EFT_Status__c == 'EFT Updated';
@@ -528,6 +533,7 @@ public without sharing class ClaimHubService {
         ClaimHubEntryHandler.suppress = false;
         ClaimHubLog.event(e.Id, 'Claimant', 'Bank details changed', 'Account ending ' + last3(l.Account_Number__c != null ? l.Account_Number__c : l.Bank_Account_Number__c));
         flagSharedBank(e.Id, e.Promotional_Campaign__c, l);
+        flagBankCheck(e.Id, bankCheck);
         Entry__c fresh = load(e.Id);
         ClaimHubNotifier.enqueueNow(fresh.Id, 'BANK_CHANGED');
         recompute(fresh, null);
@@ -597,25 +603,33 @@ public without sharing class ClaimHubService {
         if (!OPEN_STATUSES.contains(e.Entry_Status__c)) throw new HubException(409, 'This claim is with our team and can\'t be changed here. Reply to any of our emails if something is wrong.');
     }
 
-    static void applyBank(Lead l, Map<String, Object> bank, String countryCode) {
+    /**
+     * Checks and sets bank details on the claimant. Refuses details that can't be paid (wrong length, or an NZ number
+     * that fails its check digit); returns what the registers say, so the caller can flag anything they don't confirm.
+     */
+    static ClaimHubBank.Check applyBank(Lead l, Map<String, Object> bank, String countryCode) {
         String name = String.valueOf(bank.get('name') == null ? '' : bank.get('name')).trim();
         String bsb = String.valueOf(bank.get('bsb') == null ? '' : bank.get('bsb')).replaceAll('[^0-9]', '');
         String acct = String.valueOf(bank.get('account') == null ? '' : bank.get('account')).replaceAll('[^0-9]', '');
         if (String.isBlank(name)) throw new HubException(400, 'Add the name on the bank account.');
         if (country(countryCode) == 'NZ') {
-            // NZ: bank (2) + branch (4) + account (7) + suffix (2 or 3) = 15 or 16 digits, e.g. 12-3456-7890123-00
-            if (acct.length() != 15 && acct.length() != 16) throw new HubException(400, 'New Zealand account numbers have 15 or 16 digits, like 12-3456-7890123-00.');
-            if (!NZ_BANKS.contains(acct.left(2))) throw new HubException(400, 'The first two digits (' + acct.left(2) + ') are not a New Zealand bank code. Check the account number.');
+            // NZ: bank (2) + branch (4) + account (7) + suffix (2 or 3) = 15 or 16 digits, e.g. 12-3140-0234566-00
+            if (acct.length() != 15 && acct.length() != 16) throw new HubException(400, 'New Zealand account numbers have 15 or 16 digits, like 12-3140-0234566-00.');
+            ClaimHubBank.Check chk = ClaimHubBank.nz(acct);
             l.Account_Name__c = name.left(30); l.Bank_Account_Number__c = acct; l.BSB__c = null; l.Account_Number__c = null;
-            return;
+            return chk;
         }
         if (bsb.length() != 6) throw new HubException(400, 'BSBs have 6 digits.');
         if (acct.length() < 6 || acct.length() > 10) throw new HubException(400, 'Australian account numbers have 6 to 10 digits.');
+        ClaimHubBank.Check chk = ClaimHubBank.au(bsb);
         l.Account_Name__c = name.left(30); l.BSB__c = bsb; l.Account_Number__c = acct;
+        return chk;
     }
 
-    /** New Zealand bank codes (first two digits of an account number). Source: en.wikipedia.org/wiki/New_Zealand_bank_account_number */
-    static final Set<String> NZ_BANKS = new Set<String>{ '01','02','03','04','05','06','08','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','27','29','30','31','38','88' };
+    /** Flags (does not refuse) bank details the registers could not confirm. */
+    static void flagBankCheck(Id entryId, ClaimHubBank.Check chk) {
+        if (chk != null && chk.review != null) ClaimHubLog.event(entryId, 'System', 'Needs review: bank details not confirmed', chk.review);
+    }
 
     static void stampBank(Entry__c e, Lead l) {
         e.Consumer_Account_Name_Stamp__c = l.Account_Name__c;
@@ -624,7 +638,7 @@ public without sharing class ClaimHubService {
         e.Consumer_Bank_Account_Number__c = l.Bank_Account_Number__c;
     }
 
-    public static final String DUPLICATE_EMAIL = 'There is already a claim with this email address. Use "Get my link" to open it.';
+    public static final String DUPLICATE_EMAIL = 'You already have a claim with this email address. We can email you a link to open it.';
     public static final String DUPLICATE_SERIAL = 'This serial number is already on another claim. Our team has been told and will be in touch.';
 
     /** A positive amount from what the claimant typed ("$4,299.00", 4299), or null. */
@@ -673,6 +687,24 @@ public without sharing class ClaimHubService {
         List<String> names = new List<String>();
         for (Entry__c o : others) names.add(o.Name);
         ClaimHubLog.event(entryId, 'System', 'Needs review: bank account on another claim', 'Same account as ' + String.join(names, ', '));
+    }
+
+    /**
+     * Flags (does not refuse) a claim whose mobile is already on another claim in the same promotion.
+     * Usually a claimant who mistyped their email on the first claim, never got its link, and claimed again.
+     */
+    static void flagSharedMobile(Id entryId, Id campaignId, String key) {
+        if (String.isBlank(key)) return;
+        List<String> names = new List<String>();
+        for (Entry__c o : [SELECT Name FROM Entry__c WHERE Promotional_Campaign__c = :campaignId AND Id != :entryId AND Hub_Mobile_Key__c = :key LIMIT 3]) names.add(o.Name);
+        if (names.isEmpty()) return;
+        ClaimHubLog.event(entryId, 'System', 'Needs review: mobile on another claim', 'Same mobile as ' + String.join(names, ', ') + '. Check for a mistyped email.');
+    }
+
+    /** Last 8 digits of a mobile, so 0412 345 678, +61412345678 and 0412-345-678 match. */
+    public static String mobileKey(String mobile) {
+        String d = mobile == null ? '' : mobile.replaceAll('[^0-9]', '');
+        return d.length() < 8 ? null : d.right(8);
     }
 
     static String req(Map<String, Object> m, String key) {

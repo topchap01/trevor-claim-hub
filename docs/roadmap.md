@@ -18,6 +18,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
 - [ ] Sandbox web address `trevor-claim-hub-test.vercel.app` is open to anyone (Vercel SSO covers only preview and per-deployment addresses). Anyone with the address can lodge test claims into Wizard and trigger paid invoice reads. Keep it open for testing and client sign-off, or protect it? (audit, 31 Oct 2026)
+- [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #11).
 
 ## Phase 1: Developer handover (now)
 
@@ -26,12 +27,16 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Code on GitHub; Vercel deploys from `main`
 - [ ] **Turn on Apex tests in CI (moved to the top, audit 31 Oct 2026).** CI's Salesforce job shows green but has never deployed or tested Apex: the `SF_SANDBOX_*` secrets are not set, so it exits with a warning. Needs a CI deploy user and External Client App in Wizard (not the claim hub integration user) and the three secrets in GitHub. Until then, run `scripts/run-apex-tests.sh wizard` by hand before every merge that touches `salesforce/`. The CI job also needs #6 merged first: without it, `ClaimHubDispatchJob` (60%) and `ClaimHubLog` (56%) fall under the 75% each class needs and the deploy is refused.
 - [x] Apex for #3 (bank checks), #4 (returning claimants) and #6 (coverage fix) deployed to Wizard together, 62 of 62 tests passing, claim journey passing on all three campaigns (31 Oct 2026). **Wizard is now ahead of `main`.**
-- [ ] Merge in this order: #6, then #3, then #4. #4 already contains #3 and #6, so its diff shrinks once they are on `main`. Until #3 is merged, `main`'s smoke test fails on NZ only because its made-up account number fails the new check digit (#3 changes it).
+- [x] Merged #6, #3 and #4 to `main` (31 Oct 2026). Wizard and `main` match again.
 - [ ] Replace the sandbox integration key (exposed in a working session; see runbook). Still the original key on 31 Oct 2026.
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
+- [x] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #11). Merged and in Wizard (31 Oct 2026).
+- [ ] Load the bank registers into Wizard with `scripts/load-bank-register.mjs` (`--dry-run` first). Until then only format and check digit are tested.
 
 ## Phase 2: First production campaign
+
+Brought forward on 31 October 2026, because a claimant who can't find their way back is a support call on every campaign: returning claimants (decisions.md #12). Built in PR #4, but its Apex is not yet in Wizard and its Apex tests have not run (audit, 31 Oct 2026). It goes to production with the rest of `salesforce/force-app`, including the new `Entry__c.Hub_Mobile_Key__c` field.
 
 - [ ] S3 adapter for invoice files, Sydney bucket with retention rule
 - [ ] Production integration user, External Client App and new key pair
@@ -46,6 +51,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Load test: 2,000 claims a day with a 10× burst
 - [ ] Pick the first real campaign; one real claim end to end, through to payment
 - [ ] Confirm weekly client reports show hub claims
+- [ ] Load the bank registers into production (needs Mark's approval), and give someone the monthly refresh
 
 ## Phase 3: Run every cashback on the hub
 
@@ -53,7 +59,9 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Email wording editable by staff (templates out of Apex)
 - [ ] Client reporting view (read-only, per client)
 - [ ] Nightly reconcile of invoice files; automated retention
-- [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs)
+- [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
+- [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
+- [ ] Account name check before payment (Confirmation of Payee), if the paying bank offers it for batch payments
 - [ ] More mechanics: gift with purchase, then instant win and prize draws (designed, not built)
 
 ## Phase 4: Client self-serve (subscription product)

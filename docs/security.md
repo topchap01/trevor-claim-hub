@@ -29,6 +29,7 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
 | Second-quality (T2) stock | Excluded prefixes are refused and flagged. |
 | One invoice on several claims | Retailer plus invoice number is indexed. A match is flagged and listed on the invoice check. |
 | One bank account on several claims | Flagged for review. |
+| Mistyped bank details | NZ numbers that fail their bank's check digit are refused on the form. Banks, branches and BSBs the registers don't list are flagged. The bank lookup route takes only the six bank-and-branch digits, never an account number, and returns public register data. |
 | Many claims from one connection | The IP address is hashed with the org Id and stored. The third claim in 24 hours is flagged. Above the daily limit (default 20) claims are refused. |
 | Claim link enumeration or a leaked link | 256-bit codes. Unknown and expired links look the same. *Email me my link* issues a new code and the old link stops working. |
 | Email enumeration | The link resend gives the same answer whether or not a claim exists, and sends at most 3 links a claim a day. |

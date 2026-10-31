@@ -34,7 +34,7 @@ private class ClaimHubServiceTest {
         String token = ClaimHubTestFactory.lodge(c.Id, 'pct@example.com', 2, true, 'NZ');
         Entry__c e = ClaimHubTestFactory.entry(token);
         System.assertEquals(250, e.Cashback_Amount__c, '15% of 2,000 is 300, capped at 250');
-        System.assertEquals('123140023456700', e.Consumer_Bank_Account_Number__c);
+        System.assertEquals('123140023456600', e.Consumer_Bank_Account_Number__c);
         Map<String, Object> pub = ClaimHubService.publicCampaign(ClaimHubTestFactory.SLUG);
         System.assertEquals('percent', pub.get('tierBasis'));
         System.assertEquals(true, pub.get('needsPrices'));
@@ -88,8 +88,8 @@ private class ClaimHubServiceTest {
     @isTest static void nzBankAccountsAreChecked() {
         Promotional_Campaign__c c = ClaimHubTestFactory.campaign('NZ', null);
         Map<String, Object> r = ClaimHubTestFactory.claimRequest(c.Id, 'nz@example.com', 1, false, 'NZ');
-        r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'account' => '99-3140-0234567-00' });
-        System.assertEquals(400, refusal(r), 'not an NZ bank code');
+        r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'account' => '12-3140-0234567-00' });
+        System.assertEquals(400, refusal(r), 'fails the check digit');
         r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'account' => '12-3140' });
         System.assertEquals(400, refusal(r), 'too short');
         r.put('bank', new Map<String, Object>{ 'name' => 'S Tester', 'bsb' => '062000', 'account' => '12345678' });
@@ -117,6 +117,20 @@ private class ClaimHubServiceTest {
         ClaimHubTestFactory.lodge(c.Id, 'one@example.com', 1, true, 'AU');
         Entry__c second = ClaimHubTestFactory.entry(ClaimHubTestFactory.lodge(c.Id, 'two@example.com', 1, true, 'AU'));
         System.assertEquals(1, ClaimHubTestFactory.events(second.Id, 'Needs review: bank account'));
+    }
+
+    @isTest static void sharedMobilesAreFlaggedWhateverTheFormat() {
+        Promotional_Campaign__c c = au();
+        Map<String, Object> r1 = ClaimHubTestFactory.claimRequest(c.Id, 'sam.typo@example.com', 1, false, 'AU');
+        r1.put('mobile', '0412 345 678');
+        ClaimHubService.lodge(ClaimHubTestFactory.SLUG, r1);
+        Map<String, Object> r2 = ClaimHubTestFactory.claimRequest(c.Id, 'sam@example.com', 1, false, 'AU');
+        r2.put('mobile', '+61 412-345-678');
+        Id second = ClaimHubTestFactory.entry((String) ClaimHubService.lodge(ClaimHubTestFactory.SLUG, r2).get('token')).Id;
+        System.assertEquals(1, ClaimHubTestFactory.events(second, 'Needs review: mobile'), 'same mobile, different format, is flagged');
+        Id third = ClaimHubTestFactory.entry(ClaimHubTestFactory.lodge(c.Id, 'other@example.com', 1, false, 'AU')).Id;
+        System.assertEquals(0, ClaimHubTestFactory.events(third, 'Needs review: mobile'), 'a different mobile is not');
+        System.assertEquals(null, ClaimHubService.mobileKey('123'));
     }
 
     // ------------------------------------------------------------------ serials
