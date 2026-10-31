@@ -34,7 +34,7 @@ private class ClaimHubServiceTest {
         String token = ClaimHubTestFactory.lodge(c.Id, 'pct@example.com', 2, true, 'NZ');
         Entry__c e = ClaimHubTestFactory.entry(token);
         System.assertEquals(250, e.Cashback_Amount__c, '15% of 2,000 is 300, capped at 250');
-        System.assertEquals('123140023456700', e.Consumer_Bank_Account_Number__c);
+        System.assertEquals('123140023456600', e.Consumer_Bank_Account_Number__c);
         Map<String, Object> pub = ClaimHubService.publicCampaign(ClaimHubTestFactory.SLUG);
         System.assertEquals('percent', pub.get('tierBasis'));
         System.assertEquals(true, pub.get('needsPrices'));

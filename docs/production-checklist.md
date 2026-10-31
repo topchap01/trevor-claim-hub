@@ -33,6 +33,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Load the bank registers into `Hub_Bank_Branch__c` (decisions.md #10): `node scripts/load-bank-register.mjs --org <prod> --nz <Payments NZ .xlsx> --au BSBDirectoryFull.txt --au-key <key>.csv --approved-for-production`. Before the first load:
   - confirm Payments NZ's terms allow the Bank Branch Register to be used this way;
   - check production **data** storage has room for the rows (one per NZ branch and AU BSB; the January 2026 NZ register lists 3,296 branch numbers);
+  - load before the first live claim: until a register is loaded, an unknown NZ bank code or AU BSB is neither refused nor flagged;
   - name who runs the monthly refresh (AusPayNet updates on the first NSW business day of each month).
 - [ ] **File storage is at 119% in production (−9,175 MB remaining).** The hub no longer adds invoice files to Salesforce, but the overage still needs a clean-up or more storage.
 - [ ] Recommended: move the Anthropic key from `Claude_Setting__mdt` to a Named Credential.
