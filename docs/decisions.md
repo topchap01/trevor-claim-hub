@@ -183,6 +183,7 @@ Short records of the choices that shape the code, and what would change them.
   - The Salesforce slug is `brand-campaign` (`aeg-nz-cashback`). The web app reads the brand from the host and rebuilds the slug, so no data changes shape. A brand's subdomain only ever serves that brand's campaigns, pages and design files; anything else is not found.
   - The full slug on its own brand (`aeg.entryform.claims/aeg-nz-cashback`) redirects to the short address. Every other host (the bare domain, the `*.vercel.app` addresses, a campaign's own domain) keeps the plain `/slug` addresses, so nothing that worked before stops working.
   - The web app's `HUB_ROOT_DOMAIN` and Salesforce's `Claim_Hub_Settings__c.Hub_Root_Domain__c` hold the root (`test.entryform.claims` in the sandbox, `entryform.claims` in production). The builder asks for the brand and sets the campaign's base URL from them.
+- *Found in the audit (1 Nov 2026):* "only that brand's campaigns" does not hold yet. The check is a prefix match and brand labels may contain dashes, so `electrolux.<root>/nz-x` serves the campaign of a brand labelled `electrolux-nz`; resend takes the slug from the body, unchecked against the host. Fix listed in roadmap phase 2, *Audit fixes*.
 - *Not decided here:* what the bare domain `entryform.claims` shows (nothing, as now, or a short Trevor page); the email sending domain; whether old campaign domains redirect to the hub or serve the pages themselves.
 - *Revisit if* a client insists its campaign must show only its own domain in the address bar.
 

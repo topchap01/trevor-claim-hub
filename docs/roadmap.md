@@ -16,7 +16,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Invoice retention period (suggested: 12 months after payment).
 - [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
 - [x] Campaign addresses: every campaign at `brand.entryform.claims/campaign`; a campaign's own domain is optional and points at the hub (Mark, 1 Nov 2026; decisions.md #16, replacing #10's own domain plus yourpromotion.com.au backup).
-- [ ] What the bare domain entryform.claims shows: nothing (as now) or a short Trevor page.
+- [ ] What the bare domain entryform.claims shows: nothing or a short Trevor page. *Not "nothing" today:* `entryform.claims` (redirecting to `www`) and `www.entryform.claims` are on the sandbox project, so `www.entryform.claims/<slug>` shows the sandbox demo campaigns and lodges into Wizard (audit, 1 Nov 2026). Recommended: remove both from the sandbox project now; add them to the production project when it exists.
 - [ ] Email sending domain: send claimant emails from an entryform.claims address, or keep each campaign's own sender?
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [x] AWS account for production invoice storage: bucket `trevor-claim-hub` in ap-southeast-2, for receipts off Salesforce (Mark, 1 Nov 2026; decisions.md #6).
@@ -26,6 +26,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Where gift with purchase sits in that order.
 - [x] Emails: automatic and standard for every campaign, no staff-written or hand-sent emails (Mark, 31 Oct 2026; decisions.md #15).
 - [ ] Sandbox web address `trevor-claim-hub-test.vercel.app` is open to anyone (Vercel SSO covers only preview and per-deployment addresses). Anyone with the address can lodge test claims into Wizard and trigger paid invoice reads. Keep it open for testing and client sign-off, or protect it? (audit, 31 Oct 2026)
+- [ ] **Repository visibility.** GitHub reports `topchap01/trevor-claim-hub` as **public**; CLAUDE.md said private. Public means anyone can read the code, the security model and its known gaps, the Electrolux production figures in decisions.md, the AWS account numbers, and every Wizard console result (posted as check runs, which have shown staff usernames). Recommended: make it private today; nothing in the build needs it public (audit, 1 Nov 2026).
 - [ ] Ask Trevor's paying bank whether Confirmation of Payee (account name matches account) works on batch payment uploads or by API, in NZ and AU. Decides whether the hub can check names before paying (decisions.md #11).
 
 ## Phase 1: Developer handover (now)
@@ -36,7 +37,9 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] **Apex tests run in CI (31 Oct 2026).** `SF_SANDBOX_*` secrets set (Mark) and the CI user pre-authorised on the Claim Hub CI app in Wizard (#7). First real run, on #7: signed in to Wizard, check-only deploy, 62 of 62 tests pass (deploy ID 0Af9p00000ZhnxNCAR). CI signs in as Mark's Wizard admin user; a dedicated CI user would be tidier before Nas starts.
 - [x] Apex for #3 (bank checks), #4 (returning claimants) and #6 (coverage fix) deployed to Wizard together, 62 of 62 tests passing, claim journey passing on all three campaigns (31 Oct 2026). **Wizard is now ahead of `main`.**
 - [x] Merged #6, #3 and #4 to `main` (31 Oct 2026). Wizard and `main` match again.
-- [ ] Replace the sandbox integration key (exposed in a working session; see runbook). Still the original key on 31 Oct 2026.
+- [ ] Replace the sandbox integration key (exposed in a working session; see runbook). Still the original key on 1 Nov 2026: Vercel shows `SF_PRIVATE_KEY` unchanged since it was created on 30 Oct (audit).
+- [ ] Vercel: store `BLOB_READ_WRITE_TOKEN` as sensitive (Vercel still flags it `readable-secret`, and it is also set for Development) and set the project's Node.js version to 22.x (it says 26.x). Both from the 31 Oct audit; the token had dropped off this list (audit, 1 Nov 2026).
+- [ ] GitHub tidy-up: delete the 19 branches of merged pull requests and `probe/dispatch`, keep `deploy/wizard` (the deploy job uses it), and turn on *Automatically delete head branches*.
 - [ ] Nas (Nettverk) reviews: GitHub invite, sandbox password reset, Vercel access
 - [ ] Act on Nas's review
 - [x] Bank detail checks: NZ check digits, bank and branch registers, bank name shown on the form (decisions.md #11). Merged and in Wizard (31 Oct 2026).
@@ -44,7 +47,26 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 
 ## Phase 2: First production campaign
 
-Brought forward on 31 October 2026, because a claimant who can't find their way back is a support call on every campaign: returning claimants (decisions.md #12). Built in PR #4, but its Apex is not yet in Wizard and its Apex tests have not run (audit, 31 Oct 2026). It goes to production with the rest of `salesforce/force-app`, including the new `Entry__c.Hub_Mobile_Key__c` field.
+Brought forward on 31 October 2026, because a claimant who can't find their way back is a support call on every campaign: returning claimants (decisions.md #12). Done in Wizard (phase 3 list); it goes to production with the rest of `salesforce/force-app`, including the new `Entry__c.Hub_Mobile_Key__c` field.
+
+- [ ] **Audit fixes (docs/audits/2026-11-01-full.md). Every item blocks the first production campaign.** Each is one branch and pull request, with tests that fail before the fix.
+  - [ ] *Money and approval:*
+    - [ ] Approve is blocked while a claim has an open *Needs review* flag or an invoice result other than Passed, and the ready list shows the flags (A3).
+    - [ ] Serial and invoice changes refused after the serial deadline; bank changes refused after the bank deadline (A2).
+    - [ ] A tier's maximum spend (`Maximum_Value__c`) is applied (A4).
+    - [ ] Cashback worked out from the lower of claimed and invoice spend, or the claim flagged when the invoice prices weren't all read (A5).
+    - [ ] Every bank change on an approved or payment-failed claim is flagged (A8).
+  - [ ] *Security:*
+    - [ ] Design CSS is rejected, not repaired, when it holds `<`, escapes or `@import`, and served as a file rather than inline (W1). Blocks *staff upload a design*.
+    - [ ] Bank-change code locked while it is checked (`FOR UPDATE`), so parallel guesses count (A1).
+    - [ ] Duplicate-email answer moved after all checks and counted per connection (W3).
+    - [ ] Connection limits refuse when no IP arrives, and an org-wide daily cap on Claude calls (A7, W5).
+    - [ ] Salesforce lookups for unknown campaigns and claim links cached, and `GET` routes rate limited, so the public site can't drain the org's daily API allowance (W4).
+    - [ ] Brand labels without dashes (or matched exactly), and resend checked against the host (W7).
+    - [ ] API routes accept only `application/json` from the site itself; cookie named `__Host-` (W8).
+    - [ ] *Welcome back* links to the claim without putting the link code in the page (W2).
+    - [ ] Staff permission set loses read on `Access_Token__c` and edit on `Claim_OTP__c`; link codes redacted from `Claim_Notification__c.Body__c` (A6).
+  - [ ] *GitHub and Wizard:* CI and the Wizard console sign in as their own least-privilege users, not Mark's admin user; the `SF_SANDBOX_*` secrets move to a GitHub Environment limited to `main` and `deploy/wizard`; CI fails, not passes, when the secrets are missing (W6, A16).
 
 - [ ] Invoice files on S3, not Salesforce (decisions.md #6)
   - [x] Bucket `trevor-claim-hub`, ap-southeast-2 (Mark, 1 Nov 2026)
