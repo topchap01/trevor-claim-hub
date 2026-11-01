@@ -60,6 +60,12 @@ Short records of the choices that shape the code, and what would change them.
   - the files are independent of the web host.
 - Vercel Blob's Hobby plan also caps storage at 1 GB and blocks access when that is exceeded.
 - All file handling is in `web/lib/files.js`, so the switch is one adapter plus environment variables. Access goes through Vercel's AWS sign-in (OIDC), so no long-lived AWS keys are stored.
+- **Bucket (Mark, 1 Nov 2026):** `trevor-claim-hub` in `ap-southeast-2` (Sydney), on Trevor's AWS account, for keeping receipts off Salesforce.
+- **How the adapter works (built 1 Nov 2026):**
+  - S3 takes over when `S3_BUCKET_NAME`, `S3_REGION` and `AWS_ROLE_ARN` are all set. Otherwise Blob, if its token is set; otherwise Salesforce Files, as before.
+  - Salesforce keeps the same key shape as with Blob (`invoices/<hash of the claim link>/<name>`), so `ClaimHubService`'s folder check and every Apex class are unchanged.
+  - `S3_KEY_PREFIX` goes in front of the key inside the bucket only. That lets the sandbox use the same bucket under `sandbox/`, with its own IAM role that can't reach anything else and a short lifecycle rule (runbook, *Invoice storage on S3*).
+  - S3 files are named `<uuid>.<ext>`, Blob files `invoice-<random>.<ext>`, so the name says which store holds a file. Invoices uploaded to Blob before the switch still open, and no S3 error is ever treated as "look in Blob".
 
 **7. Flag, don't refuse, where a person should judge.** Shared bank accounts, the same invoice twice and several claims from one connection all have innocent explanations (households, shared office networks), so they go to the review queue. Certain cases are refused outright:
 - a duplicate email on the same promotion;
@@ -184,7 +190,7 @@ Short records of the choices that shape the code, and what would change them.
 - Move email templates out of Apex into one standard set kept in this repository (#15). Not editable per campaign.
 - Prize draw, then instant win (#14). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
 - k6 load test script.
-- Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
+- Switch the S3 adapter on: the AWS sign-in role and bucket settings (runbook, *Invoice storage on S3*), then the environment variables. The adapter itself is built (#6).
 - Automated invoice file retention (an S3 lifecycle rule once on S3).
 - A nightly reconcile job: Blob files no receipt points to (left behind when Salesforce timed out), and receipts whose file is missing.
 - Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs. The cookie now exists (#12); what's left is the claim page reading it instead of `?token=`.

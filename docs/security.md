@@ -47,7 +47,7 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
   - the claimant's name, email and mobile;
   - bank details;
   - what they bought.
-- **Invoice photos** are in a **private** Vercel Blob store (`trevor-claim-hub-invoices`, Sydney region).
+- **Invoice photos** are in a **private** Vercel Blob store (`trevor-claim-hub-invoices`, Sydney region) in the sandbox. Production uses the S3 bucket `trevor-claim-hub` (Sydney), which the sandbox moves to once its role is set up (decisions.md #6).
   - The path holds a hash of the claim link, never the link or a name.
   - Staff open a file through a 10-minute ticket. Salesforce issues it, keeping only its hash, and logs who opened it as an `Internal:` claim event.
   - **Retention is not yet automated.** Decide a period, for example 12 months after payment, and add a scheduled delete.
@@ -63,7 +63,8 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
 | Secret | Where | Rotation |
 |---|---|---|
 | Integration user private key | Vercel env `SF_PRIVATE_KEY` (sensitive). The matching certificate is on the External Client App. | **The sandbox key must be replaced before anyone else is given access.** It has been exposed in an AI working session. Generate a new pair, upload the certificate to the ECA, update the env var. See the runbook. Production gets its own pair. |
-| Blob read-write token | Vercel env `BLOB_READ_WRITE_TOKEN`, created by Vercel when the store was connected. | Regenerate in Vercel → Storage. |
+| Blob read-write token | Vercel env `BLOB_READ_WRITE_TOKEN`, created by Vercel when the store was connected. Sandbox only. | Regenerate in Vercel → Storage. |
+| AWS access to the invoice bucket | **None stored.** Each function exchanges Vercel's OIDC token for one-hour AWS credentials for a role that trusts only the named project and environments. `AWS_ROLE_ARN` is not a secret. | Nothing to rotate. To cut access, edit the role's trust policy. |
 | Anthropic API key | `Claude_Setting__mdt.Default` (existing, shared with the old invoice OCR). | **Recommended:** move it to a Named Credential with an External Credential, so Apex never handles the key. |
 
 There are no secrets in this repository. `.gitignore` excludes `.env*`, `*.key` and `*.pem`.

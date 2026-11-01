@@ -9,8 +9,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [x] **Address on Electrolux claims.** Full postal address and mobile, plus everything the current Electrolux build collects (Mark, 31 Oct 2026; decisions.md #13).
 - [ ] **Gender and age?** Some weekly reports (*Gender Split*, *Age Report*) use them. *Valids by State* is covered on Electrolux by #13.
 - [ ] **Consent wording** for the Electrolux marketing opt-in, and whose marketing it covers. Now wanted (decisions.md #13). The current forms leave `By_continuing_you_agree_to_Electrolux_s__c` unticked, so C4C receives `dataProtectionConsent: N` on every claim (all 4,125 Electrolux claims in the 180 days to 31 Oct 2026).
-- [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files.
-- [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
+- [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files. An S3 lifecycle rule counts from upload, not payment, so the rule is set as upload plus the longest claim-to-payment time plus the period, or the hub tags files when a claim is paid.
+- [x] **AWS account** for the production invoice store: bucket `trevor-claim-hub`, ap-southeast-2 (Mark, 1 Nov 2026; decisions.md #6).
 - [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).
 - [x] **Campaign addresses.** Every campaign at `brand.entryform.claims/campaign` (Mark, 1 Nov 2026; decisions.md #16, replacing #10).
 - [ ] **Confirmation of Payee for batch payments.** Ask Trevor's paying bank whether it is offered on payment file uploads or by API, in NZ and AU (decisions.md #11).
@@ -54,7 +54,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 ## Web production
 
 - [ ] New Vercel project, or production environment, connected to this repository's `main` branch.
-- [ ] Environment variables: `SF_LOGIN_URL` (`https://login.salesforce.com` or the My Domain), `SF_AUDIENCE=https://login.salesforce.com`, `SF_USERNAME`, `SF_CLIENT_ID`, `SF_PRIVATE_KEY` (sensitive), and `BLOB_READ_WRITE_TOKEN` (from connecting a production Blob store).
+- [ ] Environment variables: `SF_LOGIN_URL` (`https://login.salesforce.com` or the My Domain), `SF_AUDIENCE=https://login.salesforce.com`, `SF_USERNAME`, `SF_CLIENT_ID`, `SF_PRIVATE_KEY` (sensitive), and for invoices `S3_BUCKET_NAME=trevor-claim-hub`, `S3_REGION=ap-southeast-2`, `AWS_ROLE_ARN` (the production role), no `S3_KEY_PREFIX`. No Blob store and no `BLOB_READ_WRITE_TOKEN` in production.
 - [ ] Set `HUB_ENV=production` to remove the sandbox banner. Leave `HUB_HOME_SLUG` unset, so the bare domain shows nothing.
 - [ ] Domains `entryform.claims` and `*.entryform.claims` on the production project (both already on Trevor's Vercel team; the wildcard needs Vercel's nameservers, which the domain uses). Set `HUB_ROOT_DOMAIN=entryform.claims` (decisions.md #16).
 - [ ] `Claim_Hub_Settings__c.Hub_Root_Domain__c = entryform.claims` in production, so the builder gives campaigns their brand address.
@@ -62,7 +62,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Live campaign pages indexable by search engines. Today every page sends `noindex`. Claim-status pages (`/c`) stay noindex.
 - [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny.
 - [ ] Uptime monitor on `/api/health`.
-- [ ] Add `BLOB_READ_WRITE_TOKEN` as a *sensitive* variable. In the sandbox project it is stored readable, and Vercel flags it (`readable-secret`).
+- [ ] Production AWS role `trevor-claim-hub-production`: trusts only the production project's `production` environment, may only put, get and delete under `trevor-claim-hub/invoices/` (runbook, *Invoice storage on S3*). OIDC federation on, Team issuer, in the production project.
+- [ ] One test invoice through the production smoke test, opened from production Salesforce, then deleted.
 - [ ] Set the project's Node.js version to 22.x to match `web/package.json` and CI. The sandbox project says 26.x; `engines` in package.json takes precedence on Vercel, so builds use 22.x, but the two should agree.
 - [ ] Load test before launch: about 2,000 claims a day, with a 10× burst (k6 script, not yet written).
 

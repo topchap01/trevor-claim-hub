@@ -93,6 +93,57 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 730 -subj "/CN=trevor-claim-hub"
 3. Redeploy and check `/api/health`.
 4. Delete `hub.key` from your machine.
 
+**Invoice storage on S3** (decisions.md #6). The bucket is `trevor-claim-hub` in `ap-southeast-2`. The web app holds no AWS keys: Vercel gives each function a signed OIDC token, and AWS swaps it for one-hour credentials for a role that trusts only the named Vercel project and environments. Done once per environment, in the AWS console as an administrator.
+
+Values for Trevor's Vercel team:
+- team slug `mark-alexanders-projects-58606fac`;
+- sandbox project `trevor-claim-hub-test`; production project not yet created.
+
+1. **Bucket settings** (*S3 → trevor-claim-hub*). Check, or set:
+   - *Block all public access*: on.
+   - *Object Ownership*: bucket owner enforced (ACLs off).
+   - *Default encryption*: SSE-S3 (on by default for new buckets).
+   - *Bucket Versioning*: on, so an overwrite or delete can be undone.
+   - No CORS rule. Files go through the web app, never straight from the phone.
+   - Bucket policy refusing anything not over HTTPS:
+     ```json
+     {"Version":"2012-10-17","Statement":[{"Sid":"HttpsOnly","Effect":"Deny","Principal":"*","Action":"s3:*",
+       "Resource":["arn:aws:s3:::trevor-claim-hub","arn:aws:s3:::trevor-claim-hub/*"],
+       "Condition":{"Bool":{"aws:SecureTransport":"false"}}}]}
+     ```
+   - *Lifecycle rule* `sandbox-expiry`: prefix `sandbox/`, expire current versions after 30 days, delete noncurrent versions after 1 day. Made-up test files only; nothing real is kept under `sandbox/`.
+   - The production rule on `invoices/` waits for the retention decision (production-checklist.md).
+2. **Vercel as an identity provider** (*IAM → Identity providers → Add provider → OpenID Connect*), once for the AWS account:
+   - Provider URL: `https://oidc.vercel.com/mark-alexanders-projects-58606fac`
+   - Audience: `https://vercel.com/mark-alexanders-projects-58606fac`
+3. **Sandbox role** (*IAM → Roles → Create role → Custom trust policy*), named `trevor-claim-hub-sandbox`. Replace `<ACCOUNT_ID>`.
+   - Trust policy (only the sandbox project's preview and production deployments; never local development):
+     ```json
+     {"Version":"2012-10-17","Statement":[{"Effect":"Allow",
+       "Principal":{"Federated":"arn:aws:iam::<ACCOUNT_ID>:oidc-provider/oidc.vercel.com/mark-alexanders-projects-58606fac"},
+       "Action":"sts:AssumeRoleWithWebIdentity",
+       "Condition":{"StringEquals":{
+         "oidc.vercel.com/mark-alexanders-projects-58606fac:aud":"https://vercel.com/mark-alexanders-projects-58606fac",
+         "oidc.vercel.com/mark-alexanders-projects-58606fac:sub":[
+           "owner:mark-alexanders-projects-58606fac:project:trevor-claim-hub-test:environment:preview",
+           "owner:mark-alexanders-projects-58606fac:project:trevor-claim-hub-test:environment:production"]}}}]}
+     ```
+   - Permissions, as an inline policy `invoice-files` (put, open and delete under `sandbox/invoices/` only; no listing):
+     ```json
+     {"Version":"2012-10-17","Statement":[{"Effect":"Allow",
+       "Action":["s3:PutObject","s3:GetObject","s3:DeleteObject"],
+       "Resource":"arn:aws:s3:::trevor-claim-hub/sandbox/invoices/*"}]}
+     ```
+   - The production role, `trevor-claim-hub-production`, is the same with the production project's name and `environment:production` only in the trust policy, and `arn:aws:s3:::trevor-claim-hub/invoices/*` in the permissions.
+4. **Vercel** (*project → Settings → Security → Secure backend access with OIDC federation*): enabled, issuer mode *Team*.
+5. **Environment variables** on the project, for Production and Preview: `S3_BUCKET_NAME=trevor-claim-hub`, `S3_REGION=ap-southeast-2`, `AWS_ROLE_ARN=arn:aws:iam::<ACCOUNT_ID>:role/trevor-claim-hub-sandbox`, `S3_KEY_PREFIX=sandbox/`. None is a secret. Keep `BLOB_READ_WRITE_TOKEN` in the sandbox, so invoices uploaded before the switch still open.
+6. **Redeploy and check:**
+   - `node scripts/smoke-test.mjs https://<brand>.test.entryform.claims <slug>` on each demo campaign. The invoice step must pass.
+   - In Wizard, open that claim's invoice from the receipt. It should show, and its *Hub File Key* should end in a long id like `3f2a…-….jpg`.
+   - In S3, the file is under `sandbox/invoices/`.
+   - If invoice uploads now fail with "We couldn't save your invoice", the Vercel runtime log names the AWS error. `AccessDenied` on `AssumeRoleWithWebIdentity` means the trust policy's names don't match; on `PutObject`, the permissions policy or the prefix.
+   - To switch back, remove `AWS_ROLE_ARN` and redeploy. Uploads return to Blob; files already in S3 still need the role to open.
+
 ## Deploying
 
 - **Salesforce:**
