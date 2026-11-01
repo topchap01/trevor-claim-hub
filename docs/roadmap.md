@@ -13,7 +13,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Address on Electrolux claims: full postal address and mobile, plus everything the current Electrolux build collects (Mark, 31 Oct 2026; decisions.md #13).
 - [ ] Gender and age? (Some weekly reports use them.) Address is decided for Electrolux only; other clients not yet.
 - [ ] Marketing opt-in wording for Electrolux, and whose marketing it covers. Needed before the addresses can be used for marketing: the current forms send "no consent" to C4C on every claim (decisions.md #13).
-- [ ] Invoice retention period (suggested: 12 months after payment). The hub applies it automatically once set (decisions.md #17); until then every file is kept.
+- [x] Invoice retention period: 12 months after the claim is paid or not approved, or after claims close for a claim never completed (Mark, 1 Nov 2026; decisions.md #17). Set in Wizard; applied by the nightly check.
 - [x] Invoice access: through the claim hub only, no team access to S3, AWS access Mark's alone (Mark, 1 Nov 2026; decisions.md #17).
 - [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
 - [x] Campaign addresses: every campaign at `brand.entryform.claims/campaign`; a campaign's own domain is optional and points at the hub (Mark, 1 Nov 2026; decisions.md #16, replacing #10's own domain plus yourpromotion.com.au backup).

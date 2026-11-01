@@ -9,7 +9,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [x] **Address on Electrolux claims.** Full postal address and mobile, plus everything the current Electrolux build collects (Mark, 31 Oct 2026; decisions.md #13).
 - [ ] **Gender and age?** Some weekly reports (*Gender Split*, *Age Report*) use them. *Valids by State* is covered on Electrolux by #13.
 - [ ] **Consent wording** for the Electrolux marketing opt-in, and whose marketing it covers. Now wanted (decisions.md #13). The current forms leave `By_continuing_you_agree_to_Electrolux_s__c` unticked, so C4C receives `dataProtectionConsent: N` on every claim (all 4,125 Electrolux claims in the 180 days to 31 Oct 2026).
-- [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files. An S3 lifecycle rule counts from upload, not payment, so the rule is set as upload plus the longest claim-to-payment time plus the period, or the hub tags files when a claim is paid.
+- [x] **Invoice retention period:** 12 months after the claim is paid or not approved (Mark, 1 Nov 2026; decisions.md #17). Who may open invoice files: staff with `Claim_Hub_Admin`, through the claim hub only. A client contract that needs a different period would need a per-campaign override, not built.
 - [x] **AWS account** for the production invoice store: bucket `trevor-claim-hub`, ap-southeast-2 (Mark, 1 Nov 2026; decisions.md #6).
 - [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).
 - [x] **Campaign addresses.** Every campaign at `brand.entryform.claims/campaign` (Mark, 1 Nov 2026; decisions.md #16, replacing #10).
@@ -65,7 +65,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Production AWS role `trevor-claim-hub-production`, **in the bucket's account (Future Unicorn, 838547582670)**: trusts only the production project's `production` environment, may only put, get and delete under `trevor-claim-hub/invoices/` (runbook, *Invoice storage on S3*). OIDC federation on, Team issuer, in the production project.
 - [ ] One test invoice through the production smoke test, opened from production Salesforce, then deleted.
 - [ ] Nightly storage check (decisions.md #17): `CRON_SECRET` set on the production project (sensitive, Production only); the production role's policy includes `s3:PutObjectTagging` and the prefix-limited `s3:ListBucket` (runbook); the first night's check shows in the console with no problems.
-- [ ] `Claim_Hub_Settings__c.Invoice_Retention_Months__c` set once Mark decides the period. Blank keeps every file.
+- [ ] `Claim_Hub_Settings__c.Invoice_Retention_Months__c = 12` in production (Mark's decision, 1 Nov 2026). Blank keeps every file.
 - [ ] Set the project's Node.js version to 22.x to match `web/package.json` and CI. The sandbox project says 26.x; `engines` in package.json takes precedence on Vercel, so builds use 22.x, but the two should agree.
 - [ ] Load test before launch: about 2,000 claims a day, with a 10× burst (k6 script, not yet written).
 
