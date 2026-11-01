@@ -3,7 +3,10 @@
 import { test, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import { storeInvoice, readFile, removeFile, objectKey, invoiceFolder, storeOf, fileStore, fileStoreEnabled, s3Enabled, setS3ClientForTests } from '../lib/files.js';
+import {
+  storeInvoice, readFile, removeFile, objectKey, invoiceFolder, storeOf, fileStore, fileStoreEnabled, s3Enabled, setS3ClientForTests,
+  labelCampaign, listStored, deleteStored, storeName,
+} from '../lib/files.js';
 
 const TOKEN = 'B'.repeat(43);
 const FOLDER = `invoices/${crypto.createHash('sha256').update(TOKEN).digest('hex').slice(0, 24)}/`;
@@ -20,7 +23,21 @@ function fakeS3() {
     async send(cmd) {
       const op = cmd.constructor.name;
       calls.push({ op, input: cmd.input });
-      if (op === 'PutObjectCommand') { objects.set(cmd.input.Key, { body: cmd.input.Body, type: cmd.input.ContentType }); return {}; }
+      if (op === 'PutObjectCommand') { objects.set(cmd.input.Key, { body: cmd.input.Body, type: cmd.input.ContentType, at: new Date() }); return {}; }
+      if (op === 'PutObjectTaggingCommand') { objects.get(cmd.input.Key).tags = cmd.input.Tagging.TagSet; return {}; }
+      if (op === 'DeleteObjectsCommand') {
+        const Errors = [];
+        for (const { Key } of cmd.input.Delete.Objects) { if (Key.includes('dead')) Errors.push({ Key, Code: 'AccessDenied' }); else objects.delete(Key); }
+        return { Errors };
+      }
+      if (op === 'ListObjectsV2Command') {
+        // Two keys per page, to exercise paging
+        const all = [...objects.keys()].filter((k) => k.startsWith(cmd.input.Prefix)).sort();
+        const start = Number(cmd.input.ContinuationToken || 0);
+        const page = all.slice(start, start + 2);
+        return { Contents: page.map((Key) => ({ Key, Size: objects.get(Key).body.length, LastModified: objects.get(Key).at })),
+          IsTruncated: start + 2 < all.length, NextContinuationToken: String(start + 2) };
+      }
       if (op === 'DeleteObjectCommand') { objects.delete(cmd.input.Key); return {}; }
       if (op === 'GetObjectCommand') {
         const o = objects.get(cmd.input.Key);
@@ -139,4 +156,40 @@ test('the file name says which store holds it, so older Blob files never go to S
 
 test('an S3 file with S3 switched off reads as missing', async () => {
   assert.equal(await readFile(`${FOLDER}${crypto.randomUUID()}.pdf`), null);
+});
+
+test('label: tags an S3 file with its campaign, and only a real slug on an S3 file', async () => {
+  const s3 = withS3('sandbox/');
+  const key = await storeInvoice(TOKEN, JPEG, 'image/jpeg');
+  assert.equal(await labelCampaign(key, 'aeg-nz-cashback'), true);
+  assert.deepEqual(s3.objects.get(`sandbox/${key}`).tags, [{ Key: 'campaign', Value: 'aeg-nz-cashback' }]);
+  assert.equal(await labelCampaign(key, 'Bad Slug!'), false, 'never anything but a slug');
+  assert.equal(await labelCampaign(`${FOLDER}invoice-AbC.jpg`, 'aeg-nz-cashback'), false, 'Blob files are left alone');
+  setS3ClientForTests({ send: async () => { throw new Error('denied'); } });
+  assert.equal(await labelCampaign(key, 'aeg-nz-cashback'), false, 'a failed label never throws');
+});
+
+test('list: every file under the prefix, as Salesforce knows the key, across pages', async () => {
+  const s3 = withS3('sandbox/');
+  const keys = [];
+  for (let i = 0; i < 5; i++) keys.push(await storeInvoice(TOKEN, JPEG, 'image/jpeg'));
+  s3.objects.set('other/invoices/x.jpg', { body: Buffer.from('x'), at: new Date() });
+  const listed = [];
+  for await (const f of listStored()) listed.push(f);
+  assert.deepEqual(listed.map((f) => f.key).sort(), keys.sort());
+  assert.equal(listed[0].size, Buffer.from(JPEG, 'base64').length);
+  assert.ok(listed[0].at instanceof Date);
+  assert.equal(storeName(), 'trevor-claim-hub/sandbox/invoices/');
+});
+
+test('bulk delete: removes S3 files, reports refusals, never touches Blob keys', async () => {
+  const s3 = withS3('sandbox/');
+  const a = await storeInvoice(TOKEN, JPEG, 'image/jpeg');
+  const b = await storeInvoice(TOKEN, JPEG, 'image/jpeg');
+  const refused = `${FOLDER}00000000-0000-4000-8000-dead00000000.jpg`; // the fake S3 refuses this one
+  const r = await deleteStored([a, b, refused, `${FOLDER}invoice-AbC.jpg`]);
+  assert.deepEqual(r.deleted.sort(), [a, b].sort());
+  assert.deepEqual(r.failed, [refused]);
+  assert.equal(s3.objects.size, 0);
+  assert.ok(!s3.calls.at(-1).input.Delete.Objects.some((o) => o.Key.includes('invoice-AbC')), 'Blob keys never sent to S3');
 });

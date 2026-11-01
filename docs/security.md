@@ -50,7 +50,9 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
 - **Invoice photos** are in the **private** S3 bucket `trevor-claim-hub` (Sydney), production under `invoices/` and the sandbox under `sandbox/invoices/` from 1 Nov 2026, each through its own role (decisions.md #6). Sandbox invoices uploaded before then stay in the private Vercel Blob store `trevor-claim-hub-invoices` (Sydney).
   - The path holds a hash of the claim link, never the link or a name.
   - Staff open a file through a 10-minute ticket. Salesforce issues it, keeping only its hash, and logs who opened it as an `Internal:` claim event.
-  - **Retention is not yet automated.** Decide a period, for example 12 months after payment, and add a scheduled delete.
+  - This is the only everyday way in. Nobody on the team has S3 access; AWS access is Mark's alone (decisions.md #17).
+  - Each S3 file carries one tag, its campaign slug. No personal data in names or tags.
+  - **Retention** is applied by the nightly storage check once `Invoice_Retention_Months__c` is set (decisions.md #17). Not yet set: every file is kept. Files no claim points to are deleted after 7 days.
 - **Logs:**
   - Claim link codes are redacted from web app logs.
   - Security codes are never stored or emailed in readable form: the outbox keeps `[code not stored]`.
@@ -64,6 +66,7 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
 |---|---|---|
 | Integration user private key | Vercel env `SF_PRIVATE_KEY` (sensitive). The matching certificate is on the External Client App. | **The sandbox key must be replaced before anyone else is given access.** It has been exposed in an AI working session. Generate a new pair, upload the certificate to the ECA, update the env var. See the runbook. Production gets its own pair. |
 | Blob read-write token | Vercel env `BLOB_READ_WRITE_TOKEN`, created by Vercel when the store was connected. Sandbox only. | Regenerate in Vercel → Storage. |
+| Nightly job secret | Vercel env `CRON_SECRET` (sensitive). Vercel Cron sends it; `/api/cron/storage` refuses any request without it. | Replace in Vercel and redeploy. |
 | AWS access to the invoice bucket | **None stored.** Each function exchanges Vercel's OIDC token for one-hour AWS credentials for a role that trusts only the named project and environments. `AWS_ROLE_ARN` is not a secret. | Nothing to rotate. To cut access, edit the role's trust policy. |
 | Anthropic API key | `Claude_Setting__mdt.Default` (existing, shared with the old invoice OCR). | **Recommended:** move it to a Named Credential with an External Credential, so Apex never handles the key. |
 

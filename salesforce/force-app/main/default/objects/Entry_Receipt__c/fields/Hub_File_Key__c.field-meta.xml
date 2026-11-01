@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Hub_File_Key__c</fullName>
-    <description>Claim hub: where the invoice file is stored outside Salesforce (Vercel Blob pathname, private).</description>
+    <description>Claim hub: where the invoice file is stored outside Salesforce: an S3 key (uuid file name) or, for older sandbox files, a Vercel Blob pathname. Private.</description>
     <externalId>false</externalId>
     <label>Hub file key</label>
     <length>255</length>

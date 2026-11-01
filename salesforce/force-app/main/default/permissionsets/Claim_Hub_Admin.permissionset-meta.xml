@@ -67,12 +67,23 @@
     <fieldPermissions><editable>false</editable><field>Entry_Receipt__c.Hub_File_Key__c</field><readable>true</readable></fieldPermissions>
     <fieldPermissions><editable>false</editable><field>Entry_Receipt__c.Hub_Has_File__c</field><readable>true</readable></fieldPermissions>
     <fieldPermissions><editable>false</editable><field>Entry_Receipt__c.Hub_Invoice_Key__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Entry_Receipt__c.Hub_File_Size__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Entry_Receipt__c.Hub_File_Removed__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Store__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Files__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Bytes__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Unlinked__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Unlinked_Removed__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Missing__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Expired_Removed__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>false</editable><field>Hub_Storage_Check__c.Problems__c</field><readable>true</readable></fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Claim Hub Admin</label>
     <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Claim_Notification__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
     <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Claim_Event__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
     <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Claim_OTP__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
     <objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Hub_Bank_Branch__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+    <objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Hub_Storage_Check__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
     <recordTypeVisibilities><recordType>Entry__c.Claim_Hub</recordType><visible>true</visible></recordTypeVisibilities>
     <recordTypeVisibilities><recordType>Entry_Product__c.Claim_Hub_Entry_Product</recordType><visible>true</visible></recordTypeVisibilities>
     <recordTypeVisibilities><recordType>Entry_Receipt__c.Claim_Hub_Entry_Receipt</recordType><visible>true</visible></recordTypeVisibilities>

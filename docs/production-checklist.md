@@ -64,6 +64,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Uptime monitor on `/api/health`.
 - [ ] Production AWS role `trevor-claim-hub-production`, **in the bucket's account (Future Unicorn, 838547582670)**: trusts only the production project's `production` environment, may only put, get and delete under `trevor-claim-hub/invoices/` (runbook, *Invoice storage on S3*). OIDC federation on, Team issuer, in the production project.
 - [ ] One test invoice through the production smoke test, opened from production Salesforce, then deleted.
+- [ ] Nightly storage check (decisions.md #17): `CRON_SECRET` set on the production project (sensitive, Production only); the production role's policy includes `s3:PutObjectTagging` and the prefix-limited `s3:ListBucket` (runbook); the first night's check shows in the console with no problems.
+- [ ] `Claim_Hub_Settings__c.Invoice_Retention_Months__c` set once Mark decides the period. Blank keeps every file.
 - [ ] Set the project's Node.js version to 22.x to match `web/package.json` and CI. The sandbox project says 26.x; `engines` in package.json takes precedence on Vercel, so builds use 22.x, but the two should agree.
 - [ ] Load test before launch: about 2,000 claims a day, with a 10× burst (k6 script, not yet written).
 

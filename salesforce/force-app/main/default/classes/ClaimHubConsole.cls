@@ -105,7 +105,53 @@ public with sharing class ClaimHubConsole {
                 tile('Payment failed', n.get('payment_failed'), v.get('payment_failed'), cc, 'Claimant asked to fix bank details'),
                 tile('Not approved', n.get('not_approved'), v.get('not_approved'), cc, '') },
             'queue' => queue, 'ready' => ready, 'issues' => issueRows,
-            'outbox' => outbox };
+            'outbox' => outbox, 'storage' => storage(c.Id, tz) };
+    }
+
+    /**
+     * Invoice files for the campaign (decisions.md #17): what is held, what retention has removed or will remove in the
+     * next 30 days, and the latest nightly storage check. Counts only; files open from a claim, one at a time.
+     */
+    @TestVisible
+    static Map<String, Object> storage(Id campaignId, String tz) {
+        AggregateResult held = [SELECT COUNT(Id) k, SUM(Hub_File_Size__c) b, MIN(CreatedDate) earliest FROM Entry_Receipt__c
+                                WHERE Entry__r.Promotional_Campaign__c = :campaignId AND Hub_File_Key__c != null AND Hub_File_Removed__c = null WITH USER_MODE];
+        Integer removed = [SELECT COUNT() FROM Entry_Receipt__c WHERE Entry__r.Promotional_Campaign__c = :campaignId AND Hub_File_Removed__c != null WITH USER_MODE];
+        Integer months = ClaimHubSettings.retentionMonths();
+        Integer files = (Integer) held.get('k');
+        List<Object> rows = new List<Object>{
+            dateRow('Files held', String.valueOf(files)),
+            dateRow('Space used', size((Decimal) held.get('b'))),
+            dateRow('First received', held.get('earliest') == null ? 'None yet' : ((Datetime) held.get('earliest')).format('d MMM yyyy', tz)),
+            dateRow('Kept for', months == null ? 'Every file (no retention period set)' : months + ' months after the claim is settled'),
+            dateRow('Deleted under retention', String.valueOf(removed)) };
+        if (months != null) {
+            Integer soon = ClaimHubStorage.dueBy(campaignId, Datetime.now().addDays(30).addMonths(-months), 10000).size();
+            rows.add(dateRow('Due for deletion in 30 days', String.valueOf(soon)));
+        }
+        List<Hub_Storage_Check__c> cs = [SELECT CreatedDate, Store__c, Files__c, Unlinked__c, Unlinked_Removed__c, Missing__c, Expired_Removed__c, Problems__c
+                                         FROM Hub_Storage_Check__c WITH USER_MODE ORDER BY CreatedDate DESC, Id DESC LIMIT 1];
+        Map<String, Object> check = null;
+        if (!cs.isEmpty()) {
+            Hub_Storage_Check__c k = cs[0];
+            Boolean ok = String.isBlank(k.Problems__c) && (k.Missing__c == null || k.Missing__c == 0);
+            check = new Map<String, Object>{
+                'when' => k.CreatedDate.format('h:mma d MMM', tz).replace('AM', 'am').replace('PM', 'pm'),
+                'ok' => ok, 'cls' => ok ? 'pill ok' : 'pill warn', 'label' => ok ? 'All files accounted for' : 'Needs a look',
+                'store' => k.Store__c,
+                'line' => n(k.Files__c) + ' files across all campaigns · ' + n(k.Missing__c) + ' missing · '
+                          + n(k.Unlinked_Removed__c) + ' unlinked removed · ' + n(k.Expired_Removed__c) + ' deleted under retention',
+                'problems' => k.Problems__c };
+        }
+        return new Map<String, Object>{ 'rows' => rows, 'check' => check };
+    }
+    static Integer n(Decimal d) { return d == null ? 0 : d.intValue(); }
+    @TestVisible
+    static String size(Decimal bytes) {
+        if (bytes == null || bytes == 0) return '0 MB';
+        if (bytes < 1048576) return (bytes / 1024).setScale(0, RoundingMode.HALF_UP) + ' KB';
+        if (bytes < 1073741824) return (bytes / 1048576).setScale(1, RoundingMode.HALF_UP) + ' MB';
+        return (bytes / 1073741824).setScale(2, RoundingMode.HALF_UP) + ' GB';
     }
 
     /** Team decisions. Setting the status fires the claimant email through ClaimHubEntryHandler. */

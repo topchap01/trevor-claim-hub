@@ -13,7 +13,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Address on Electrolux claims: full postal address and mobile, plus everything the current Electrolux build collects (Mark, 31 Oct 2026; decisions.md #13).
 - [ ] Gender and age? (Some weekly reports use them.) Address is decided for Electrolux only; other clients not yet.
 - [ ] Marketing opt-in wording for Electrolux, and whose marketing it covers. Needed before the addresses can be used for marketing: the current forms send "no consent" to C4C on every claim (decisions.md #13).
-- [ ] Invoice retention period (suggested: 12 months after payment).
+- [ ] Invoice retention period (suggested: 12 months after payment). The hub applies it automatically once set (decisions.md #17); until then every file is kept.
+- [x] Invoice access: through the claim hub only, no team access to S3, AWS access Mark's alone (Mark, 1 Nov 2026; decisions.md #17).
 - [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
 - [x] Campaign addresses: every campaign at `brand.entryform.claims/campaign`; a campaign's own domain is optional and points at the hub (Mark, 1 Nov 2026; decisions.md #16, replacing #10's own domain plus yourpromotion.com.au backup).
 - [ ] What the bare domain entryform.claims shows: nothing (as now) or a short Trevor page.
@@ -85,7 +86,10 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 - [ ] Staff console covers the day's work without Salesforce screens: approvals, queue, emails, invoice view
 - [ ] Email templates out of Apex into one standard set kept in this repository, with merge fields, so the builder can preview them and wording changes are reviewed once for every campaign. Never edited per campaign (decisions.md #15).
 - [ ] Client reporting view (read-only, per client)
-- [ ] Nightly reconcile of invoice files; automated retention
+- [ ] Invoice files managed by the hub (decisions.md #17; brought forward by Mark, 1 Nov 2026)
+  - [x] Built: campaign label on each file, file size on the receipt, nightly check, retention by rule, *Invoice files* panel in the console
+  - [ ] Sandbox switched on: role permission for listing and labels, `CRON_SECRET`, one check run and shown in the console
+  - [ ] Production: the same, with the production role
 - [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
 - [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
 - [ ] Account name check before payment (Confirmation of Payee), if the paying bank offers it for batch payments

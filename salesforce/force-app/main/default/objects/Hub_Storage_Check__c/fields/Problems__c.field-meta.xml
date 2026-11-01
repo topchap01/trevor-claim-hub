@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Problems__c</fullName>
+    <description>What the check could not do or found wrong, one per line. Blank when all was well.</description>
+    <label>Problems</label>
+    <length>4000</length>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

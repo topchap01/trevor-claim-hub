@@ -12,7 +12,9 @@
 // and by lifecycle rules.
 import crypto from 'node:crypto';
 import { put, get, del } from '@vercel/blob';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command, PutObjectTaggingCommand,
+} from '@aws-sdk/client-s3';
 import { awsCredentialsProvider } from '@vercel/oidc-aws-credentials-provider';
 
 const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' }; // what Claude can read
@@ -110,4 +112,50 @@ export async function readFile(key) {
   const file = await get(key, { access: 'private' });
   if (!file || file.statusCode !== 200) return null;
   return { stream: file.stream, contentType: file.blob?.contentType };
+}
+
+// ------------------------------------------------------------------ storage management (decisions.md #17)
+
+/** Where the invoice files are, for the nightly check's record: bucket/prefix/invoices/. */
+export const storeName = () => `${env().S3_BUCKET_NAME}/${objectKey('invoices/')}`;
+
+/**
+ * Labels a stored file with its campaign, once Salesforce has accepted it, so the bucket describes itself without
+ * Salesforce. A campaign slug only, never personal data. Best effort: a missing label never fails a claim.
+ */
+export async function labelCampaign(key, slug) {
+  if (!s3Enabled() || storeOf(key) !== 's3' || !/^[a-z0-9-]{3,80}$/.test(slug || '')) return false;
+  try {
+    await s3().send(new PutObjectTaggingCommand({
+      Bucket: env().S3_BUCKET_NAME, Key: objectKey(key), Tagging: { TagSet: [{ Key: 'campaign', Value: slug }] },
+    }));
+    return true;
+  } catch (err) { console.error('invoice label failed', err.name || err.message); return false; }
+}
+
+/** Every stored invoice file in S3: { key (as Salesforce holds it), size, at }. Pages through the bucket 1,000 at a time. */
+export async function* listStored() {
+  const prefix = objectKey('invoices/');
+  const strip = prefix.length - 'invoices/'.length;
+  let token;
+  do {
+    const r = await s3().send(new ListObjectsV2Command({ Bucket: env().S3_BUCKET_NAME, Prefix: prefix, ContinuationToken: token }));
+    for (const o of r.Contents || []) yield { key: o.Key.slice(strip), size: o.Size || 0, at: o.LastModified ? new Date(o.LastModified) : null };
+    token = r.IsTruncated ? r.NextContinuationToken : undefined;
+  } while (token);
+}
+
+/** Deletes S3 files by key, 1,000 per request. Returns the keys deleted and the keys S3 refused. */
+export async function deleteStored(keys) {
+  const deleted = [], failed = [];
+  const list = keys.filter((k) => storeOf(k) === 's3');
+  for (let i = 0; i < list.length; i += 1000) {
+    const batch = list.slice(i, i + 1000);
+    const r = await s3().send(new DeleteObjectsCommand({
+      Bucket: env().S3_BUCKET_NAME, Delete: { Objects: batch.map((k) => ({ Key: objectKey(k) })), Quiet: true },
+    }));
+    const bad = new Set((r.Errors || []).map((e) => e.Key));
+    for (const k of batch) (bad.has(objectKey(k)) ? failed : deleted).push(k);
+  }
+  return { deleted, failed };
 }

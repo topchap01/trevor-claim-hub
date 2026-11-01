@@ -129,13 +129,17 @@ Values:
            "owner:mark-alexanders-projects-58606fac:project:trevor-claim-hub-test:environment:preview",
            "owner:mark-alexanders-projects-58606fac:project:trevor-claim-hub-test:environment:production"]}}}]}
      ```
-   - Permissions, as an inline policy `invoice-files` (put, open and delete under `sandbox/invoices/` only; no listing):
+   - Permissions, as an inline policy `invoice-files`: save, open, delete and label files under `sandbox/invoices/`, and list that folder only (for the nightly check):
      ```json
-     {"Version":"2012-10-17","Statement":[{"Effect":"Allow",
-       "Action":["s3:PutObject","s3:GetObject","s3:DeleteObject"],
-       "Resource":"arn:aws:s3:::trevor-claim-hub/sandbox/invoices/*"}]}
+     {"Version":"2012-10-17","Statement":[
+       {"Sid":"InvoiceFiles","Effect":"Allow",
+        "Action":["s3:PutObject","s3:GetObject","s3:DeleteObject","s3:PutObjectTagging"],
+        "Resource":"arn:aws:s3:::trevor-claim-hub/sandbox/invoices/*"},
+       {"Sid":"ListInvoiceFolder","Effect":"Allow","Action":"s3:ListBucket",
+        "Resource":"arn:aws:s3:::trevor-claim-hub",
+        "Condition":{"StringLike":{"s3:prefix":"sandbox/invoices/*"}}}]}
      ```
-   - The production role, `trevor-claim-hub-production`, is the same with the production project's name and `environment:production` only in the trust policy, and `arn:aws:s3:::trevor-claim-hub/invoices/*` in the permissions.
+   - The production role, `trevor-claim-hub-production`, is the same with the production project's name and `environment:production` only in the trust policy, and `invoices/` in place of `sandbox/invoices/` in both statements.
 4. **Vercel** (*project → Settings → Security → Secure backend access with OIDC federation*): enabled, issuer mode *Team*.
 5. **Environment variables** on the project, for Production and Preview: `S3_BUCKET_NAME=trevor-claim-hub`, `S3_REGION=ap-southeast-2`, `AWS_ROLE_ARN=arn:aws:iam::838547582670:role/trevor-claim-hub-sandbox`, `S3_KEY_PREFIX=sandbox/`. None is a secret. Keep `BLOB_READ_WRITE_TOKEN` in the sandbox, so invoices uploaded before the switch still open.
 6. **Redeploy and check:**
@@ -144,6 +148,19 @@ Values:
    - In S3, the file is under `sandbox/invoices/`.
    - If invoice uploads now fail with "We couldn't save your invoice", the Vercel runtime log names the AWS error. `AccessDenied` on `AssumeRoleWithWebIdentity` means the trust policy's names don't match; on `PutObject`, the permissions policy or the prefix.
    - To switch back, set `AWS_ROLE_ARN`'s environments to Development only (keeps the value) and redeploy. Uploads return to Blob; files already in S3 still need the role to open.
+7. **Nightly storage check** (decisions.md #17):
+   - Add `CRON_SECRET` to the project: *Settings → Environment Variables*, a long random value (for example the output of `openssl rand -hex 32`), type *Sensitive*, Production only. Vercel Cron sends it; without it the check refuses to run.
+   - The schedule is in `web/vercel.json` (16:17 UTC, 03:17 Sydney in summer). Vercel runs crons on production deployments only.
+   - To run it now: *Vercel → project → Settings → Cron Jobs → Run*. Then refresh the console: *Invoice files* shows the check.
+
+**Invoice files: what the console shows and what to do** (decisions.md #17).
+- *Invoice files* on each campaign: files held, space used, first received, the retention rule, deleted so far, due in the next 30 days, and the latest nightly check.
+- **"Needs a look"** on the nightly check: the problem is written under it and was emailed to the alert address.
+  - *Could not read the Salesforce index* or *Could not list the store*: nothing was deleted. Check the integration user can sign in, and the role's `ListBucket` statement. The next night tries again.
+  - *Too many to be leftovers* or *wrong bucket or folder*: the bucket and the Salesforce org do not match (for example production Salesforce with the sandbox prefix). Check `S3_KEY_PREFIX` and `SF_LOGIN_URL` on the project. Nothing was deleted and no claim was flagged.
+- **Claim in *Needs a person* with "invoice file missing":** the claim points to a file the store does not hold. Ask the claimant to upload the invoice again from their claim link; the new file replaces the record.
+- **Retention:** set `Invoice_Retention_Months__c` in *Claim Hub Settings*. From the next night, files due are deleted and each deletion is recorded on its claim. Leave blank to keep every file.
+- **Nobody browses the bucket.** To see an invoice, open it from its claim. AWS console access is Mark's, for setup and emergencies.
 
 ## Deploying
 

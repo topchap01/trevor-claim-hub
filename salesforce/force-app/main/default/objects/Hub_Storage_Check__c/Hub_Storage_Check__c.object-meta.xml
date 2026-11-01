@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>One record per nightly invoice storage check (decisions.md #17): what the store held, files no claim points to, claims whose file is missing, and what was deleted. Counts only, no personal data.</description>
+    <label>Hub Storage Check</label>
+    <pluralLabel>Hub Storage Checks</pluralLabel>
+    <nameField><displayFormat>SC-{00000}</displayFormat><label>Check</label><type>AutoNumber</type></nameField>
+    <sharingModel>ReadWrite</sharingModel>
+    <enableReports>true</enableReports>
+    <enableActivities>false</enableActivities>
+    <enableHistory>false</enableHistory>
+    <enableSearch>false</enableSearch>
+</CustomObject>
