@@ -98,7 +98,7 @@ The hub adds no parallel claim objects. It writes the existing ones, so reports,
 
 | Object | Hub use |
 |---|---|
-| `Promotional_Campaign__c` | One per promotion, created by the builder. Hub settings live in `Hub_*` fields: slug, country, deadlines, retailers, minimum spend, excluded serial prefixes, cap, terms summary, the builder's spec and issues. |
+| `Promotional_Campaign__c` | One per promotion, created by the builder. Hub settings live in `Hub_*` fields: slug, country, deadlines, retailers, minimum spend, excluded serial prefixes, cap, terms summary, the builder's spec and issues, and whether the form asks for the postal address and the store (with the stores to offer; decisions.md #13). |
 | `Cashback_Range__c` | Tiers. A fixed amount (`Cashback_Value__c`) or a percentage (`Percentage__c`), by quantity and/or spend band. |
 | `Promotional_Product__c` / `Campaign_Product__c` | The participating models. |
 | `Lead` | The claimant: name, contact and bank details. Emails go to the Lead, so they don't use the single-email allowance. |

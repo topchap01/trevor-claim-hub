@@ -82,3 +82,28 @@ export function bankLine(country, r) {
     ? 'We don\'t recognise that bank and branch. Check the first six digits; if they\'re right, carry on.'
     : 'We don\'t recognise that BSB. Check it; if it\'s right, carry on.' };
 }
+
+/**
+ * Splits "12 Example Street" into the street number and street name the engine stores separately (decisions.md #13).
+ * Handles 12A, 12-14, Lot 5 and unit/number ("4/12 Example Street"). Null when the line doesn't start with a number.
+ */
+export function splitStreet(line) {
+  const s = String(line || '').replace(/\s+/g, ' ').trim();
+  const slash = s.match(/^([A-Za-z0-9]{1,6})\s?\/\s?(\d+[A-Za-z]?)\s+(.+)$/);
+  if (slash) return { unit: slash[1], streetNumber: slash[2], street: slash[3] };
+  const m = s.match(/^((?:lot)\s?)?(\d+[A-Za-z]?(?:\s?-\s?\d+[A-Za-z]?)?),?\s+(.+)$/i);
+  if (!m) return null;
+  return { unit: '', streetNumber: `${m[1] || ''}${m[2]}`.replace(/\s?-\s?/, '-'), street: m[3] };
+}
+
+/** What the claim form sends for the address, or an error to show. unit is the separate optional field. */
+export function addressFor(form, regions) {
+  const parts = splitStreet(form.line);
+  if (!String(form.line || '').trim()) return { error: 'Please add your street address.' };
+  if (!parts) return { error: 'Start your street address with the street number, for example 12 Example Street.' };
+  if (!String(form.suburb || '').trim()) return { error: 'Please add your suburb or town.' };
+  if (!/^\d{4}$/.test(String(form.postcode || '').trim())) return { error: 'Postcodes are 4 digits.' };
+  if (!regions?.some((r) => r.value === form.state)) return { error: 'Please choose your state or region.' };
+  return { address: { unit: String(form.unit || '').trim() || parts.unit, streetNumber: parts.streetNumber, street: parts.street,
+    suburb: form.suburb.trim(), postcode: form.postcode.trim(), state: form.state } };
+}

@@ -32,7 +32,8 @@ public without sharing class ClaimHubService {
                    Hub_Timezone__c, Hub_Terms_Summary__c, Date_start__c, Date_end__c, Sales_From__c, Sales_To__c,
                    Entry_Record_Type_ID__c, First_Product_RecordType_ID__c, Minimum_Number_Of_Products__c, Maximum_Number_Of_Products__c,
                    Campaign_Email_Address__c, Campaign_Email_From_Name__c, Hub_Country__c, Hub_Brand_Name__c, Hub_Retailers__c,
-                   Hub_Excluded_Serial_Prefixes__c, Hub_Min_Spend__c, Hub_Single_Transaction__c, Hub_Max_Cashback__c
+                   Hub_Excluded_Serial_Prefixes__c, Hub_Min_Spend__c, Hub_Single_Transaction__c, Hub_Max_Cashback__c,
+                   Hub_Collect_Address__c, Hub_Collect_Store__c, Hub_Stores__c
             FROM Promotional_Campaign__c WHERE Hub_Slug__c = :slug AND Hub_Enabled__c = true LIMIT 1];
         if (cs.isEmpty()) throw new HubException(404, 'Promotion not found');
         return cs[0];
@@ -64,7 +65,120 @@ public without sharing class ClaimHubService {
             'products' => products, 'tiers' => tiers, 'tierBasis' => tierBasis(rs), 'maxCashback' => c.Hub_Max_Cashback__c, 'needsPrices' => needsPrices(rs, c), 'supportEmail' => c.Hub_Sender_Address__c,
             'country' => country(c.Hub_Country__c), 'currency' => country(c.Hub_Country__c) == 'NZ' ? 'NZD' : 'AUD', 'brandName' => c.Hub_Brand_Name__c,
             'retailers' => c.Hub_Retailers__c, 'minSpend' => c.Hub_Min_Spend__c, 'singleTransaction' => c.Hub_Single_Transaction__c,
-            'excludedSerialPrefixes' => c.Hub_Excluded_Serial_Prefixes__c };
+            'excludedSerialPrefixes' => c.Hub_Excluded_Serial_Prefixes__c,
+            'collectAddress' => c.Hub_Collect_Address__c, 'collectStore' => c.Hub_Collect_Store__c,
+            'regions' => c.Hub_Collect_Address__c || (c.Hub_Collect_Store__c && country(c.Hub_Country__c) == 'AU') ? regionOptions(c.Hub_Country__c) : null,
+            'stores' => c.Hub_Collect_Store__c ? stores(c) : null };
+    }
+
+    // ---------------------------------------------------------------- address and store (decisions.md #13)
+    /** AU states as the old forms and the C4C state mapping write them (State_Mapping__mdt). */
+    public static final List<String> AU_STATES = new List<String>{ 'ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA' };
+    static final List<String> AU_STATE_NAMES = new List<String>{ 'Australian Capital Territory', 'New South Wales', 'Northern Territory',
+        'Queensland', 'South Australia', 'Tasmania', 'Victoria', 'Western Australia' };
+    /** NZ regions: the active values of Lead.Town_City__c, spelt as in State_Mapping__mdt so C4C can map them to a region code. */
+    public static final List<String> NZ_REGIONS = new List<String>{ 'Northland', 'Auckland', 'Waikato', 'Bay of Plenty', 'Gisborne', 'Hawke\'s Bay',
+        'Taranaki', 'Manawatu-Whanganui', 'Wellington', 'Tasman', 'Nelson', 'Marlborough', 'West Coast', 'Canterbury', 'Otago', 'Southland' };
+    public static final String OTHER_STORE = 'Other';
+
+    /** States (AU) or regions (NZ) for the form: value is what is stored, label is what the claimant sees. */
+    public static List<Object> regionOptions(String countryValue) {
+        List<Object> out = new List<Object>();
+        if (country(countryValue) == 'NZ') { for (String r : NZ_REGIONS) out.add(new Map<String, Object>{ 'value' => r, 'label' => r }); }
+        else { for (Integer i = 0; i < AU_STATES.size(); i++) out.add(new Map<String, Object>{ 'value' => AU_STATES[i], 'label' => AU_STATE_NAMES[i] }); }
+        return out;
+    }
+
+    static Set<String> regionValues(String countryValue) {
+        return new Set<String>(country(countryValue) == 'NZ' ? NZ_REGIONS : AU_STATES);
+    }
+
+    /** Stores offered on the form: the campaign's list, else its eligible retailers, then Other. Empty means the claimant types the name. */
+    public static List<String> stores(Promotional_Campaign__c c) {
+        List<String> out = new List<String>();
+        Set<String> seen = new Set<String>();
+        String src = String.isNotBlank(c.Hub_Stores__c) ? c.Hub_Stores__c : (c.Hub_Retailers__c == null ? '' : c.Hub_Retailers__c.replace(',', '\n'));
+        for (String line : src.split('\n')) {
+            String v = line.trim().left(255);
+            if (String.isBlank(v) || v.equalsIgnoreCase(OTHER_STORE) || !seen.add(v.toLowerCase())) continue;
+            out.add(v);
+        }
+        if (!out.isEmpty()) out.add(OTHER_STORE);
+        return out;
+    }
+
+    static String text(Map<String, Object> m, String key, Integer maxLen, String missing) {
+        Object v = m == null ? null : m.get(key);
+        String s = v == null ? '' : String.valueOf(v).normalizeSpace();
+        if (String.isBlank(s)) { if (missing != null) throw new HubException(400, missing); return null; }
+        if (s.length() > maxLen) throw new HubException(400, 'Please shorten the ' + key.replaceAll('([A-Z])', ' $1').toLowerCase() + '.');
+        return s;
+    }
+
+    /** Checks the postal address and holds it on an unsaved Entry, in the stamps the weekly reports and the C4C feed read. */
+    static void applyAddress(Entry__c e, Map<String, Object> req, Promotional_Campaign__c c) {
+        if (!(req.get('address') instanceof Map<String, Object>)) throw new HubException(400, 'Please add your postal address.');
+        Map<String, Object> a = (Map<String, Object>) req.get('address');
+        Boolean nz = country(c.Hub_Country__c) == 'NZ';
+        String unit = text(a, 'unit', 20, null);
+        String streetNumber = text(a, 'streetNumber', 20, 'Please add your street number.');
+        String street = text(a, 'street', 120, 'Please add your street name.');
+        String suburb = text(a, 'suburb', 80, nz ? 'Please add your suburb or town.' : 'Please add your suburb.');
+        String postcode = text(a, 'postcode', 10, 'Please add your postcode.');
+        if (!Pattern.matches('^[0-9]{4}$', postcode)) throw new HubException(400, 'Postcodes are 4 digits.');
+        String state = text(a, 'state', 40, nz ? 'Please choose your region.' : 'Please choose your state.');
+        if (!regionValues(c.Hub_Country__c).contains(state)) throw new HubException(400, nz ? 'Please choose your region from the list.' : 'Please choose your state from the list.');
+        e.Consumer_Unit_No__c = unit;
+        e.Consumer_Street_Number__c = streetNumber;
+        e.Consumer_Street_Stamp__c = street;
+        e.Consumer_Suburb__c = suburb;
+        e.Consumer_PostalCode_Stamp__c = postcode;
+        e.Consumer_State_Stamp__c = state;
+        e.Consumer_Country_Stamp__c = nz ? 'New Zealand' : 'Australia';
+    }
+
+    static final List<String> ADDRESS_STAMPS = new List<String>{ 'Consumer_Unit_No__c', 'Consumer_Street_Number__c', 'Consumer_Street_Stamp__c',
+        'Consumer_Suburb__c', 'Consumer_PostalCode_Stamp__c', 'Consumer_State_Stamp__c', 'Consumer_Country_Stamp__c' };
+
+    static void addressToLead(Lead l, Entry__c a, String countryValue) {
+        l.Unit_No__c = a.Consumer_Unit_No__c; l.Street_Number__c = a.Consumer_Street_Number__c; l.Street__c = a.Consumer_Street_Stamp__c;
+        l.Suburb__c = a.Consumer_Suburb__c; l.Postal_Code__c = a.Consumer_PostalCode_Stamp__c; l.Country__c = a.Consumer_Country_Stamp__c;
+        if (country(countryValue) == 'NZ') l.Town_City__c = a.Consumer_State_Stamp__c; else l.State_Territory__c = a.Consumer_State_Stamp__c;
+    }
+
+    /** The trigger maps two Lead fields onto Consumer_State_Stamp__c, so the saved stamps are checked and put right if the mapping lost one. */
+    static void keepAddress(Id entryId, Entry__c a) {
+        Entry__c saved = Database.query('SELECT ' + String.join(ADDRESS_STAMPS, ', ') + ' FROM Entry__c WHERE Id = :entryId');
+        Entry__c fix = new Entry__c(Id = entryId);
+        Boolean differs = false;
+        for (String f : ADDRESS_STAMPS) if (saved.get(f) != a.get(f)) { fix.put(f, a.get(f)); differs = true; }
+        if (differs) update fix;
+    }
+
+    /** Checks where the claimant bought and returns the receipt fields the C4C feed reads (Retailer__c, Retailer_Suburb__c, Retailer_State__c). */
+    static Entry_Receipt__c storeReceipt(Map<String, Object> req, Promotional_Campaign__c c) {
+        if (!(req.get('store') instanceof Map<String, Object>)) throw new HubException(400, 'Please tell us which store you bought from.');
+        Map<String, Object> st = (Map<String, Object>) req.get('store');
+        List<String> offered = stores(c);
+        Entry_Receipt__c r = new Entry_Receipt__c();
+        if (offered.isEmpty()) {
+            r.Retailer__c = OTHER_STORE;
+            r.Store_Name__c = text(st, 'name', 200, 'Please add the store name.');
+        } else {
+            String chosen = text(st, 'retailer', 255, 'Please choose the store you bought from.');
+            String match;
+            for (String o : offered) if (o.equalsIgnoreCase(chosen)) match = o;
+            if (match == null) throw new HubException(400, 'Please choose the store from the list.');
+            r.Retailer__c = match;
+            if (match == OTHER_STORE) r.Store_Name__c = text(st, 'name', 200, 'Please add the store name.');
+        }
+        r.Retailer_Suburb__c = text(st, 'suburb', 100, 'Please add the suburb or town of the store.');
+        if (country(c.Hub_Country__c) == 'AU') {
+            String state = text(st, 'state', 3, 'Please choose the state the store is in.');
+            if (!AU_STATES.contains(state)) throw new HubException(400, 'Please choose the store\'s state from the list.');
+            r.Retailer_State__c = state;
+        }
+        return r;
     }
 
     public static String country(String v) { return String.isBlank(v) ? 'AU' : v.trim().toUpperCase(); }
@@ -189,8 +303,16 @@ public without sharing class ClaimHubService {
         Cashback_Range__c range = rangeFor(c.Id, items.size(), spend);
         if (range == null && !ranges(c.Id).isEmpty()) throw new HubException(400, 'These appliances don\'t reach a cashback level in this promotion. Check the offer details above.');
 
+        // Address and store, when the campaign asks for them (decisions.md #13). Checked before anything is saved.
+        Entry__c address = new Entry__c();
+        if (c.Hub_Collect_Address__c) applyAddress(address, req, c);
+        Entry_Receipt__c store = c.Hub_Collect_Store__c ? storeReceipt(req, c) : null;
+
         Lead l = new Lead(FirstName = first, LastName = last, Email = email, MobilePhone = mobile, Company = 'None');
         if (country(c.Hub_Country__c) == 'NZ') l.Contact_Number__c = mobile;
+        // The legacy EntryCreation trigger copies the address from the Lead onto the Entry (Lead_To_Entry_Mapping__mdt),
+        // so it goes on the Lead in the fields the old forms use: State_Territory__c for an AU state, Town_City__c for an NZ region
+        if (c.Hub_Collect_Address__c) addressToLead(l, address, c.Hub_Country__c);
         Map<String, Object> bank = (Map<String, Object>) req.get('bank');
         ClaimHubBank.Check bankCheck = bank != null ? applyBank(l, bank, c.Hub_Country__c) : null;
         insert l;
@@ -220,6 +342,7 @@ public without sharing class ClaimHubService {
             if (ex.getDmlType(0) == StatusCode.DUPLICATE_VALUE) throw new HubException(409, DUPLICATE_EMAIL).withCode('duplicate_email');
             throw ex;
         }
+        if (c.Hub_Collect_Address__c) keepAddress(e.Id, address);
 
         List<Entry_Product__c> eps = new List<Entry_Product__c>();
         Set<String> seen = new Set<String>();
@@ -240,11 +363,17 @@ public without sharing class ClaimHubService {
         }
         insertSerials(eps);
 
+        // One receipt per claim: the store from the form and any invoice details share it, and a later invoice upload fills the same one
         Map<String, Object> inv = (Map<String, Object>) req.get('invoice');
-        if (inv != null) {
-            insert new Entry_Receipt__c(RecordTypeId = receiptRecordType(entryRt), Entry__c = e.Id, Receipt_Number__c = (String) inv.get('number'),
-                Receipt_Date__c = dateOrNull(inv.get('date')),
-                Store_Name__c = (String) inv.get('store'));
+        if (inv != null || store != null) {
+            Entry_Receipt__c r = store != null ? store : new Entry_Receipt__c();
+            r.RecordTypeId = receiptRecordType(entryRt); r.Entry__c = e.Id;
+            if (inv != null) {
+                r.Receipt_Number__c = (String) inv.get('number');
+                r.Receipt_Date__c = dateOrNull(inv.get('date'));
+                if (r.Store_Name__c == null) r.Store_Name__c = (String) inv.get('store');
+            }
+            insert r;
         }
 
         ClaimHubLog.event(e.Id, 'Claimant', 'Lodged', items.size() + ' appliances' + (spend > 0 ? ', spend ' + money(spend, c.Hub_Country__c) : '') +
@@ -289,7 +418,7 @@ public without sharing class ClaimHubService {
                                Promotional_Product__r.Campaign_Products__r.Name, Promotional_Product__r.Campaign_Products__r.Name__c,
                                Promotional_Product__r.Campaign_Products__r.Category__c
                         FROM Entry_Products__r ORDER BY CreatedDate),
-                       (SELECT Id, Receipt_Number__c, Receipt_Date__c, Store_Name__c, OCR_Status__c, OCR_Invoice_Date__c, OCR_Store_Name__c, Hub_Has_File__c, Hub_File_Key__c FROM Entry_Receipts__r ORDER BY CreatedDate)
+                       (SELECT Id, Receipt_Number__c, Receipt_Date__c, Store_Name__c, Retailer__c, Retailer_Suburb__c, OCR_Status__c, OCR_Invoice_Date__c, OCR_Store_Name__c, Hub_Has_File__c, Hub_File_Key__c FROM Entry_Receipts__r ORDER BY CreatedDate)
                 FROM Entry__c WHERE Id IN :entryIds]);
     }
 
@@ -330,7 +459,9 @@ public without sharing class ClaimHubService {
         }
         List<Object> receipts = new List<Object>();
         for (Entry_Receipt__c r : e.Entry_Receipts__r) {
-            receipts.add(new Map<String, Object>{ 'number' => r.Receipt_Number__c, 'date' => r.Receipt_Date__c, 'store' => r.Store_Name__c, 'check' => r.OCR_Status__c });
+            String storeName = String.isNotBlank(r.Store_Name__c) ? r.Store_Name__c
+                : String.join(new List<String>{ r.Retailer__c == null ? '' : r.Retailer__c, r.Retailer_Suburb__c == null ? '' : r.Retailer_Suburb__c }, ' ').normalizeSpace();
+            receipts.add(new Map<String, Object>{ 'number' => r.Receipt_Number__c, 'date' => r.Receipt_Date__c, 'store' => String.isBlank(storeName) ? null : storeName, 'check' => r.OCR_Status__c });
         }
         List<Object> timeline = new List<Object>();
         for (Claim_Event__c ev : [SELECT Actor__c, Action__c, Detail__c, CreatedDate FROM Claim_Event__c WHERE Entry__c = :e.Id ORDER BY CreatedDate DESC LIMIT 20]) {

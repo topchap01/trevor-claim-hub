@@ -55,11 +55,15 @@ private class ClaimHubTermsTest {
     @isTest static void buildsTheCampaign() {
         Promotional_Campaign__c compare = ClaimHubTestFactory.campaign('NZ', null);
         Map<String, Object> o = new Map<String, Object>{ 'name' => 'TestBrand Summer (copy)', 'slug' => 'testbrand-summer', 'start' => '2026-10-29', 'end' => '2026-12-31',
-            'baseUrl' => 'https://claims.example.com', 'sender' => 'promo@example.com', 'enable' => true, 'compareCampaignId' => compare.Id };
+            'baseUrl' => 'https://claims.example.com', 'sender' => 'promo@example.com', 'enable' => true, 'compareCampaignId' => compare.Id,
+            'collectAddress' => true, 'collectStore' => true, 'stores' => 'Harvey Norman\nNoel Leeming' };
         Id cid = ClaimHubTerms.create(JSON.serialize(spec()), JSON.serialize(o));
         Promotional_Campaign__c c = [SELECT Hub_Slug__c, Hub_Country__c, Hub_Min_Spend__c, Hub_Excluded_Serial_Prefixes__c, Hub_Terms_Issues__c, Hub_Single_Transaction__c,
+                                            Hub_Collect_Address__c, Hub_Collect_Store__c, Hub_Stores__c,
                                             (SELECT Id FROM Cashback_ranges__r), (SELECT Id FROM Promo_Products__r) FROM Promotional_Campaign__c WHERE Id = :cid];
         System.assertEquals('NZ', c.Hub_Country__c);
+        System.assert(c.Hub_Collect_Address__c && c.Hub_Collect_Store__c, 'address and store asked for (decisions.md #13)');
+        System.assertEquals('Harvey Norman\nNoel Leeming', c.Hub_Stores__c);
         System.assertEquals('A,B', c.Hub_Excluded_Serial_Prefixes__c);
         System.assertEquals(2, c.Cashback_ranges__r.size());
         System.assertEquals(2, c.Promo_Products__r.size(), 'duplicate model listed once');

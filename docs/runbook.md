@@ -56,6 +56,8 @@ The health route reports these counts:
 2. Paste the terms or attach the PDF.
 3. Check what was read and every issue raised.
 4. Set the dates and web address name. Optionally compare products with a past campaign.
+   - *Ask for the claimant's postal address* and *Ask which store they bought from* are on for Electrolux and AEG terms (decisions.md #13). Check the list of stores to offer: spell each one as reports should show it (for example `Harvey Norman`, `The Good Guys`). Other is added for you.
+   - These can also be changed later on the campaign record: *Claim Hub Collect Address*, *Claim Hub Collect Store*, *Claim Hub Stores*.
 5. Create the campaign. Open the claim page and run one test claim.
 
 **Refresh the bank registers** monthly, after AusPayNet's update on the first NSW business day, and after a sandbox refresh:
@@ -95,6 +97,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 730 -subj "/CN=trevor-claim-hub"
 
 - **Salesforce:**
   1. `sf project deploy start -d salesforce/force-app --test-level RunSpecifiedTests` with every `*Test` class. CI does this.
+  - **To Wizard without a CLI sign-in:** push the commit to the `deploy/wizard` branch (`git push origin HEAD:deploy/wizard --force`), or run *Deploy to Wizard* from the Actions tab. The job signs in with the CI sandbox secrets, stops if the org is not a sandbox, deploys with the hub tests, runs `scripts/apex/wizard-setup.apex` (demo campaign settings) and smoke-tests the three demo campaigns on the sandbox address. Deploy and smoke results appear on the check.
   2. Deploy `salesforce/legacy-patches` separately, with the legacy test classes.
 - **Web:** pushing to `main` deploys to production through Vercel's Git integration. Pull requests get preview deployments.
 - **Rollback:**

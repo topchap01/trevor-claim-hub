@@ -1,0 +1,79 @@
+name: Deploy to Wizard
+
+# Deploys salesforce/force-app to the Wizard sandbox with the hub tests, runs scripts/apex/wizard-setup.apex,
+# then smoke-tests the demo campaigns on the sandbox web address. Results go on the check as annotations.
+# Start it by pushing a commit to the deploy/wizard branch, or from the Actions tab (any branch).
+# Uses the same sandbox secrets as CI. It stops if the org it signs in to is not a sandbox: production is never touched.
+on:
+  push:
+    branches: [deploy/wizard]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-wizard
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Wizard and smoke-test
+    runs-on: ubuntu-latest
+    env:
+      HUB_URL: https://trevor-claim-hub-test.vercel.app
+      SMOKE_SLUGS: electrolux-cross-category electrolux-kitchen-refresh aeg-nz-cashback
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global @salesforce/cli
+      - name: Sign in to the sandbox
+        env:
+          SF_SANDBOX_JWT_KEY: ${{ secrets.SF_SANDBOX_JWT_KEY }}
+        run: |
+          if [ -z "$SF_SANDBOX_JWT_KEY" ]; then echo "::error title=Not run::Sandbox secrets are not set."; exit 1; fi
+          echo "$SF_SANDBOX_JWT_KEY" > server.key
+          set +e
+          OUT=$(sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
+            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci --json 2>/dev/null)
+          STATUS=$?
+          set -e
+          rm server.key
+          if [ $STATUS -ne 0 ]; then
+            REASON=$(printf '%s' "$OUT" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j={};try{j=JSON.parse(s)}catch{}console.log(String([j.name,j.message].filter(Boolean).join(": ")||s.slice(0,600)).replace(/\s+/g," ").slice(0,600))})')
+            echo "::error title=Sandbox sign-in failed::$REASON"
+            exit 1
+          fi
+      - name: Check this is a sandbox
+        run: |
+          IS=$(sf data query -o ci -q "SELECT IsSandbox FROM Organization" --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).result.records[0].IsSandbox))')
+          if [ "$IS" != "true" ]; then echo "::error title=Stopped::The signed-in org is not a sandbox. Nothing was deployed."; exit 1; fi
+      - name: Deploy with the hub tests
+        working-directory: salesforce
+        run: |
+          TESTS=$(ls force-app/main/default/classes/*Test.cls | xargs -n1 basename | sed 's/\.cls$//' | paste -sd, -)
+          set +e
+          sf project deploy start -o ci -d force-app --test-level RunSpecifiedTests --tests ${TESTS//,/ --tests } --wait 30 --json > ../deploy-result.json 2>/dev/null
+          STATUS=$?
+          set -e
+          node ../scripts/deploy-report.mjs < ../deploy-result.json | tee ../deploy-report.txt
+          grep -E '^(Status|Components|Tests):' ../deploy-report.txt | sed 's/^/::notice title=Deploy::/' || true
+          rm -f ../deploy-result.json
+          exit $STATUS
+      - name: Set up the demo campaigns
+        run: |
+          sf apex run -o ci -f scripts/apex/wizard-setup.apex --json > setup.json 2>/dev/null || true
+          node -e 'const j=require("./setup.json");const r=j.result||{};if(!r.success){console.log(`::error title=Setup script::${String(r.exceptionMessage||r.compileProblem||j.message||"failed").replace(/\s+/g," ").slice(0,600)}`);process.exit(1)}const lines=String(r.logs||"").split("\n").filter(l=>l.includes("USER_DEBUG")).map(l=>l.split("|DEBUG|").pop());for(const l of lines)console.log(`::notice title=Setup::${l}`)'
+      - name: Smoke-test the demo campaigns
+        run: |
+          FAILED=0
+          for SLUG in $SMOKE_SLUGS; do
+            set +e
+            node scripts/smoke-test.mjs "$HUB_URL" "$SLUG" > "smoke-$SLUG.txt" 2>&1
+            CODE=$?
+            set -e
+            cat "smoke-$SLUG.txt"
+            grep '^FAIL' "smoke-$SLUG.txt" | sed "s/^FAIL  /::error title=Smoke $SLUG::/" || true
+            echo "::notice title=Smoke $SLUG::$(grep -c '^PASS' "smoke-$SLUG.txt") passed, $(grep -c '^FAIL' "smoke-$SLUG.txt") failed. $(tail -1 "smoke-$SLUG.txt")"
+            [ $CODE -ne 0 ] && FAILED=1
+          done
+          exit $FAILED
