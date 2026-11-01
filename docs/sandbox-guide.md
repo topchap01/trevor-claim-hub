@@ -8,11 +8,11 @@ Your user has the `Claim_Hub_Admin` and `Claim_Link_Admin` permission sets.
 
 | Campaign | Web address | What it shows |
 |---|---|---|
-| AEG NZ Harvey Norman Cashback Summer 2026 (sandbox) | `/aeg-nz-cashback` | Built by the builder from AEG's real NZ terms, with new dates. Has spend bands (NZ$5,000+), a Harvey Norman-only rule, a single transaction, T2 serial prefixes A, B and C excluded, and NZ bank accounts. Wears the AEG design copied from aegcashbackpromo.co.nz (`web/designs/aeg-nz-cashback`), with the banner's baked-in dates removed and the dates rendered from the campaign. |
-| Electrolux AU Cross Category Cashback (sandbox copy) | `/electrolux-cross-category` | Built from production ELN0002's terms. Pays 15% of spend for 2 appliances and 20% for 3 or more. Has 93 products and AU bank details. |
-| Electrolux Kitchen Refresh Cashback 2027 | `/electrolux-kitchen-refresh` | The first made-up demo: fixed amounts by quantity. |
+| AEG NZ Harvey Norman Cashback Summer 2026 (sandbox) | `aeg.test.entryform.claims/nz-cashback` | Built by the builder from AEG's real NZ terms, with new dates. Has spend bands (NZ$5,000+), a Harvey Norman-only rule, a single transaction, T2 serial prefixes A, B and C excluded, and NZ bank accounts. Wears the AEG design copied from aegcashbackpromo.co.nz (`web/designs/aeg-nz-cashback`), with the banner's baked-in dates removed and the dates rendered from the campaign. |
+| Electrolux AU Cross Category Cashback (sandbox copy) | `electrolux.test.entryform.claims/cross-category` | Built from production ELN0002's terms. Pays 15% of spend for 2 appliances and 20% for 3 or more. Has 93 products and AU bank details. |
+| Electrolux Kitchen Refresh Cashback 2027 | `electrolux.test.entryform.claims/kitchen-refresh` | The first made-up demo: fixed amounts by quantity. |
 
-The web app runs at `https://trevor-claim-hub-test.vercel.app` and is open to anyone with the address. Vercel SSO protects only preview and per-deployment addresses (checked 31 Oct 2026; whether to close it is an open decision in roadmap.md).
+Each campaign is at its brand address on `test.entryform.claims` (decisions.md #16). The older form, `https://trevor-claim-hub-test.vercel.app/<slug>` (for example `/aeg-nz-cashback`), still works. Both are open to anyone with the address. Vercel SSO protects only preview and per-deployment addresses (checked 31 Oct 2026; whether to close it is an open decision in roadmap.md).
 
 ## Claims to look at (AEG NZ)
 

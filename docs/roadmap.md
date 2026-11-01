@@ -15,7 +15,9 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Marketing opt-in wording for Electrolux, and whose marketing it covers. Needed before the addresses can be used for marketing: the current forms send "no consent" to C4C on every claim (decisions.md #13).
 - [ ] Invoice retention period (suggested: 12 months after payment).
 - [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
-- [x] Campaign addresses: the campaign's own domain, plus a backup address on yourpromotion.com.au (decisions.md #10).
+- [x] Campaign addresses: every campaign at `brand.entryform.claims/campaign`; a campaign's own domain is optional and points at the hub (Mark, 1 Nov 2026; decisions.md #16, replacing #10's own domain plus yourpromotion.com.au backup).
+- [ ] What the bare domain entryform.claims shows: nothing (as now) or a short Trevor page.
+- [ ] Email sending domain: send claimant emails from an entryform.claims address, or keep each campaign's own sender?
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [ ] AWS account for production invoice storage.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
@@ -52,7 +54,12 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
   - [x] Private claim page, browser tab and icon carry the campaign look (PR #2)
   - [ ] Staff upload a design to a campaign (console), stored in the public asset store, not Salesforce
   - [ ] Campaign logo and colour in emails
-- [ ] Campaign addresses: the hub serves each campaign on its own domain and on a yourpromotion.com.au backup address; the builder adds both to Vercel (decisions.md #10). Check how yourpromotion.com.au's DNS is run, since it also carries the existing Experience site.
+- [ ] Campaign addresses on entryform.claims (decisions.md #16). Brought forward on 1 Nov 2026: it replaces per-campaign DNS and the yourpromotion.com.au backup.
+  - [x] Domain bought and run on Vercel's DNS; `test.entryform.claims` and `*.test.entryform.claims` on the sandbox project (1 Nov 2026)
+  - [x] Web app serves `brand.<root>/campaign`; builder asks for the brand and sets the address; console shows the short address
+  - [x] Wizard: `Hub_Root_Domain__c = test.entryform.claims`, the three demo campaigns on their brand addresses; deployed with #13 (deploy ID 0Af9p00000ZiN82CAF, 71 of 71 tests), claim journey passing on all three (1 Nov 2026)
+  - [ ] Production project: `entryform.claims` and `*.entryform.claims`, `HUB_ROOT_DOMAIN=entryform.claims`
+  - [ ] A campaign's own domain pointed at the hub, when a client wants one (optional)
 - [ ] Electrolux claim fields (decisions.md #13). Needed before the first Electrolux campaign on the hub. Built as a campaign setting the builder turns on, not hard-coded to Electrolux, so another client can use it:
   - [x] postal address on the claim form (unit, street number, street, suburb, postcode, state or region), with state and region values that match `State_Mapping__mdt` (#13);
   - [x] store picked from the campaign's list, with store suburb and (AU) state (#13);

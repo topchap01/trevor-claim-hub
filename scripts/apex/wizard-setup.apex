@@ -20,3 +20,25 @@ for (Promotional_Campaign__c c : cs) {
 update cs;
 for (Promotional_Campaign__c c : cs) System.debug('Address and store on: ' + c.Hub_Slug__c + ' (' + c.Hub_Country__c + ')');
 System.debug('Campaigns set: ' + cs.size());
+
+// ---- decisions.md #16: hub root domain and the demo campaigns' brand addresses
+{
+// Wizard only. decisions.md #16: sandbox campaigns live at https://<brand>.test.entryform.claims/<campaign>.
+// Sets the hub root domain and moves the three demo campaigns to their brand addresses. Safe to run again.
+
+Claim_Hub_Settings__c hubSet = Claim_Hub_Settings__c.getOrgDefaults();
+if (hubSet == null || hubSet.Id == null) hubSet = new Claim_Hub_Settings__c(SetupOwnerId = UserInfo.getOrganizationId());
+hubSet.Hub_Root_Domain__c = 'test.entryform.claims';
+upsert hubSet;
+
+Map<String, String> hubBases = new Map<String, String>{
+    'aeg-nz-cashback' => 'https://aeg.test.entryform.claims',
+    'electrolux-cross-category' => 'https://electrolux.test.entryform.claims',
+    'electrolux-kitchen-refresh' => 'https://electrolux.test.entryform.claims'
+};
+List<Promotional_Campaign__c> hubCs = [SELECT Id, Hub_Slug__c, Hub_Base_URL__c FROM Promotional_Campaign__c WHERE Hub_Slug__c IN :hubBases.keySet()];
+for (Promotional_Campaign__c hubC : hubCs) hubC.Hub_Base_URL__c = hubBases.get(hubC.Hub_Slug__c);
+update hubCs;
+for (Promotional_Campaign__c hubC : hubCs) System.debug('address ' + ClaimHubSettings.pageUrl(hubC.Hub_Base_URL__c, hubC.Hub_Slug__c));
+System.debug('root=' + ClaimHubSettings.rootDomain() + ' campaigns moved=' + hubCs.size());
+}
