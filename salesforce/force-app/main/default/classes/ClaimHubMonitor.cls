@@ -41,6 +41,8 @@ public without sharing class ClaimHubMonitor implements Schedulable {
     public static List<String> check() {
         Map<String, Object> snap = snapshot();
         List<String> problems = (List<String>) snap.get('problems');
+        // Storage alerts go by email only; they are not part of the uptime check (ClaimHubStorage.alerts)
+        problems.addAll(ClaimHubStorage.alerts());
         if (problems.isEmpty()) return problems;
         ClaimHubLog.warn('Claim hub health: ' + String.join(problems, '; '));
         String to = ClaimHubSettings.alertEmail();

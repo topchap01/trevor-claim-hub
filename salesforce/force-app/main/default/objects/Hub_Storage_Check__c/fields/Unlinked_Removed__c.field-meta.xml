@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Unlinked_Removed__c</fullName>
+    <description>Unlinked files deleted by this check (older than 7 days).</description>
+    <label>Unlinked files removed</label>
+    <required>false</required>
+    <precision>10</precision>
+    <scale>0</scale>
+    <type>Number</type>
+</CustomField>

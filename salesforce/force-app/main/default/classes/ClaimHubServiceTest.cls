@@ -351,14 +351,16 @@ private class ClaimHubServiceTest {
         Map<String, Object> req = ClaimHubTestFactory.receiptRequest();
         String folder = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(token))).left(24);
         req.put('fileKey', 'invoices/' + folder + '/invoice-x1.jpg');
+        req.put('fileSize', 48213);
         Test.startTest();
         Map<String, Object> v = ClaimHubService.addReceipt(token, req);
         Test.stopTest();
         System.assertEquals('review', v.get('stage'), 'all items in: ' + v.get('outstanding'));
-        Entry_Receipt__c rec = [SELECT OCR_Status__c, Hub_Has_File__c, Hub_File_Key__c, Hub_Invoice_Key__c, Receipt_Number__c FROM Entry_Receipt__c WHERE Entry__r.Access_Token__c = :token];
+        Entry_Receipt__c rec = [SELECT OCR_Status__c, Hub_Has_File__c, Hub_File_Key__c, Hub_File_Size__c, Hub_Invoice_Key__c, Receipt_Number__c FROM Entry_Receipt__c WHERE Entry__r.Access_Token__c = :token];
         System.assertEquals('Passed', rec.OCR_Status__c);
         System.assert(rec.Hub_Has_File__c);
         System.assertEquals('invoices/' + folder + '/invoice-x1.jpg', rec.Hub_File_Key__c);
+        System.assertEquals(48213, rec.Hub_File_Size__c, 'size as stored, from the web app');
         System.assertEquals(0, [SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId = :ClaimHubTestFactory.entry(token).Id], 'file kept outside Salesforce');
         System.assertEquals(1, [SELECT COUNT() FROM Claim_Notification__c WHERE Entry__r.Access_Token__c = :token AND Template_Key__c = 'COMPLETE']);
 

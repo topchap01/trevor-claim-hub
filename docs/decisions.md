@@ -186,6 +186,26 @@ Short records of the choices that shape the code, and what would change them.
 - *Not decided here:* what the bare domain `entryform.claims` shows (nothing, as now, or a short Trevor page); the email sending domain; whether old campaign domains redirect to the hub or serve the pages themselves.
 - *Revisit if* a client insists its campaign must show only its own domain in the address bar.
 
+**17. Staff see invoices through the claim hub only. Nobody browses the bucket; the hub manages what is kept.** *(Mark, 1 Nov 2026)*
+- *Access (Mark):*
+  - The everyday way to see an invoice is from its claim: the console's *View invoice* button (and the claim record) issues a link that works for 10 minutes and records who opened it on the claim (#6). Access follows the `Claim_Hub_Admin` permission set.
+  - No team access to the S3 bucket. AWS access is Mark's alone, for setup and emergencies.
+  - *Why:* the bucket's file names are deliberately meaningless (a hash of the claim link and a random id), so browsing it shows nothing useful; a file opened in AWS leaves no trace on the claim; and every extra AWS login is another way into claimants' invoices.
+- *Management (Mark agreed the build):*
+  - **Index:** Salesforce is the record of which file belongs to which claim. Each receipt holds the file's key and, from 1 Nov 2026, its size.
+  - **Campaign label:** once Salesforce accepts an upload, the web app tags the S3 file `campaign=<slug>`, so the bucket describes itself without Salesforce (#1a). A campaign name only, never personal data.
+  - **Nightly check** (`/api/cron/storage`, Vercel Cron, 03:17 Sydney): compares the bucket with the Salesforce index and records the result as a `Hub_Storage_Check__c`.
+    - Files no claim points to (a replaced invoice, or an upload Salesforce never saved) are deleted once 7 days old. A replaced invoice would otherwise be kept for ever.
+    - A claim whose file is missing goes in front of a person once, in *Needs a person*.
+    - Guards: nothing is deleted if the index could not be read in full, or if unlinked files are more than a tenth of the store (that pattern means a fault, such as the wrong bucket or org). If more than half the expected files are missing, it is reported as a fault and no claim is flagged.
+    - Problems email the alert address once; they never mark the hub as down on the uptime check.
+  - **Retention:** `Claim_Hub_Settings__c.Invoice_Retention_Months__c`. A file is deleted when its claim was paid or not approved that many months ago, or, for a claim never completed, that many months after claims closed. Claims still with the team, approved or with a failed payment are never due. Blank (as now) keeps every file. The period itself is still Mark's decision (roadmap).
+    - The deletion is recorded on the claim (`Internal: invoice file deleted`) and on the receipt (`Hub_File_Removed__c`); the key stays as a record of what was held.
+    - Settlement dates come from the *Paid* and *Not approved* events the hub already logs, so no new field on the claim.
+  - **Console panel** (*Invoice files*, per campaign): files held, space used, first received, the retention rule, deleted so far and due in the next 30 days, and the latest nightly check.
+- *Not now:* a campaign export (one campaign's invoices bundled for a client or an audit, logged like any other view). The client portal (phase 4) reuses the same 10-minute links.
+- *Revisit if* volumes make the nightly listing slow (one S3 list request per 1,000 files; S3 Inventory is the next step), or a client contract needs its own retention period (a per-campaign override of the setting).
+
 ## Known follow-ups
 
 - Split `ClaimHubService.lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render` into smaller methods. Code Analyzer flags their complexity. They are fully tested, so the refactor is safe to do.
@@ -193,6 +213,5 @@ Short records of the choices that shape the code, and what would change them.
 - Prize draw, then instant win (#14). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
 - k6 load test script.
 - S3 for production: the production role in the bucket's account, and the variables on the production project (#6). Live on the sandbox since 1 Nov 2026.
-- Automated invoice file retention (an S3 lifecycle rule once on S3).
-- A nightly reconcile job: Blob files no receipt points to (left behind when Salesforce timed out), and receipts whose file is missing.
+- Invoice retention and the nightly reconcile are built (#17); retention waits for Mark's period. Sandbox Blob files from before 1 Nov 2026 are outside the check and go when the Blob store is retired.
 - Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs. The cookie now exists (#12); what's left is the claim page reading it instead of `?token=`.

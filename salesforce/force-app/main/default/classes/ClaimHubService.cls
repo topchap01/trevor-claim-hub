@@ -591,6 +591,9 @@ public without sharing class ClaimHubService {
         r.Hub_Invoice_Key__c = invoiceKey;
         r.Hub_Has_File__c = true;
         r.Hub_File_Key__c = fileKey;
+        // Size as stored, measured by the web app (never the browser); a new file is not a removed one
+        r.Hub_File_Size__c = fileKey == null || req.get('fileSize') == null ? null : Decimal.valueOf(String.valueOf(req.get('fileSize'))).setScale(0);
+        r.Hub_File_Removed__c = null;
         r.OCR_Status__c = ocr.containsKey('error') ? 'Not read' : (checks.isEmpty() ? 'Passed' : 'Check: ' + String.join(checks, '; ')).left(255);
         r.Validation_Notes__c = r.OCR_Status__c;
         if (r.Receipt_Date__c == null) r.Receipt_Date__c = dateOrNull(ocr.get('invoiceDate'));

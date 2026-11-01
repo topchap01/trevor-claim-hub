@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Store__c</fullName>
+    <description>Where the files are: bucket and folder, for example trevor-claim-hub/sandbox/invoices/.</description>
+    <label>Store</label>
+    <required>false</required>
+    <length>255</length>
+    <type>Text</type>
+</CustomField>

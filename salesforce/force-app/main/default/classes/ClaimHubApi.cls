@@ -9,6 +9,7 @@
  *   POST /claimhub/v1/resend
  *   GET  /claimhub/v1/files/{ticket}      staff invoice link (short-lived ticket from ClaimHubConsole.invoiceLink)
  *   GET  /claimhub/v1/health              uptime check
+ *   GET  /claimhub/v1/storage/keys[/{after}] | storage/due, POST storage/report   nightly invoice storage check (ClaimHubStorage)
  * The web app passes the claimant's IP address in X-Hub-Client-IP; it is only stored hashed.
  */
 @RestResource(urlMapping='/claimhub/v1/*')
@@ -97,6 +98,11 @@ global without sharing class ClaimHubApi {
         if (head == 'resend' && method == 'POST') return ClaimHubService.resendLink(body);
         if (head == 'files' && p.size() == 2 && method == 'GET') return ClaimHubFiles.resolve(p[1]);
         if (head == 'health' && p.size() == 1 && method == 'GET') return ClaimHubMonitor.snapshot();
+        if (head == 'storage' && p.size() >= 2) {
+            if (p[1] == 'keys' && p.size() <= 3 && method == 'GET') return ClaimHubStorage.keys(p.size() == 3 ? p[2] : null);
+            if (p[1] == 'due' && p.size() == 2 && method == 'GET') return ClaimHubStorage.due();
+            if (p[1] == 'report' && p.size() == 2 && method == 'POST') return ClaimHubStorage.report(body);
+        }
         throw new ClaimHubService.HubException(404, 'Not found');
     }
 }

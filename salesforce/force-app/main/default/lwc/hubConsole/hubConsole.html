@@ -88,6 +88,19 @@
                         <div class="chips"><template for:each={s.rules} for:item="r"><span class="chip" key={r}>{r}</span></template></div>
                     </section>
                     <section class="panel">
+                        <h2>Invoice files</h2>
+                        <p class="sub">Kept privately in S3. Open one from its claim; each view is recorded on the claim.</p>
+                        <dl>
+                            <template for:each={s.storage.rows} for:item="d"><div class="dl" key={d.label}><dt>{d.label}</dt><dd>{d.value}</dd></div></template>
+                        </dl>
+                        <template lwc:if={s.storage.check}>
+                            <p class="chk"><span class={s.storage.check.cls}>{s.storage.check.label}</span> Nightly check {s.storage.check.when}</p>
+                            <p class="sub">{s.storage.check.line}</p>
+                            <template lwc:if={s.storage.check.problems}><p class="probs">{s.storage.check.problems}</p></template>
+                        </template>
+                        <template lwc:else><p class="sub chk">The nightly storage check has not run yet.</p></template>
+                    </section>
+                    <section class="panel">
                         <h2>Emails</h2>
                         <p>{s.outbox.Sent} sent · {s.outbox.Queued} waiting · {s.outbox.Failed} failed</p>
                     </section>

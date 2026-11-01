@@ -24,6 +24,11 @@ public without sharing class ClaimHubSettings {
     public static String alertEmail() { return s().Alert_Email__c; }
     public static String model() { return String.isBlank(s().Model__c) ? 'claude-sonnet-4-6' : s().Model__c; }
     public static String fileBaseUrl() { return s().File_Base_URL__c; }
+    /** Months to keep invoice files after a claim is settled (ClaimHubStorage). Null keeps every file. */
+    public static Integer retentionMonths() {
+        Decimal v = s().Invoice_Retention_Months__c;
+        return v == null || v < 1 ? null : v.intValue();
+    }
     /** The hub's own domain, e.g. entryform.claims. Campaigns live at https://brand.root/campaign (decisions.md #16). */
     public static String rootDomain() { return String.isBlank(s().Hub_Root_Domain__c) ? null : s().Hub_Root_Domain__c.trim().toLowerCase().removeEnd('.'); }
 

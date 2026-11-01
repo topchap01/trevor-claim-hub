@@ -1,5 +1,5 @@
 import { hub, json, okToken, readJson, bad, clientIp } from '@/lib/sf';
-import { fileStoreEnabled, storeInvoice, removeFile } from '@/lib/files';
+import { fileStoreEnabled, storeInvoice, removeFile, labelCampaign } from '@/lib/files';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -34,11 +34,14 @@ export async function POST(req, { params: paramsP }) {
       return bad('We couldn\'t save your invoice just now. Please try again.', 503);
     }
     body.fileKey = fileKey;
+    body.fileSize = Buffer.byteLength(body.base64, 'base64'); // measured here, never taken from the browser
   }
 
   const result = await hub(`claims/${params.token}/${params.action}`, { method: 'POST', body, ip: clientIp(req) });
   // Remove the file only when Salesforce definitely refused it. On a timeout or 5xx it may still have been saved,
   // so the file stays (an unreferenced file costs a few cents; a claim pointing at a deleted file loses the invoice).
   if (fileKey && result.status >= 400 && result.status < 500) await removeFile(fileKey);
+  // Accepted: label the file with its campaign (decisions.md #17)
+  if (fileKey && result.status === 200) await labelCampaign(fileKey, result.data?.slug);
   return json(result);
 }

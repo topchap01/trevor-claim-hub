@@ -31,7 +31,7 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 | `POST /api/campaign/{slug}/chat` | `POST campaigns/{slug}/chat` | Help assistant, before a claim exists. |
 | `GET /api/claim/{token}` | `GET claims/{token}` | The claimant's view of their claim. On success the web app sets the `hub_claim_<slug>` cookie, so this phone remembers the claim (decisions.md #12). Lodging sets it too. |
 | `POST /api/claim/{token}/serial` | `POST claims/{token}/serial` | `{productId, serial, pnc?}` |
-| `POST /api/claim/{token}/receipt` | `POST claims/{token}/receipt` | `{base64, contentType, fileName}`. The web app stores the file and adds `fileKey`. |
+| `POST /api/claim/{token}/receipt` | `POST claims/{token}/receipt` | `{base64, contentType, fileName}`. The web app stores the file and adds `fileKey` and `fileSize` (measured on the server). Once Salesforce accepts it, the web app tags the S3 file with the campaign. |
 | `POST /api/claim/{token}/plate` | `POST claims/{token}/plate` | `{base64, contentType}`. Returns `{serial, pnc, model, readable}` or `{error}`. |
 | `POST /api/claim/{token}/code` | `POST claims/{token}/code` | Emails a 6-digit bank-change code. |
 | `POST /api/claim/{token}/bank` | `POST claims/{token}/bank` | `{code, name, bsb?, account}` |
@@ -99,3 +99,14 @@ The claim view (`GET claims/{token}`) returns:
 - `products`, `receipts` and `timeline`. The timeline never includes `Needs review:` or `Internal:` events.
 - masked contact and bank details: the email masked, the last three digits of the mobile and account;
 - deadlines, the payment promise and the country.
+
+## Invoice storage (decisions.md #17)
+
+Called only by the nightly check, `GET /api/cron/storage`, which Vercel Cron runs with `Authorization: Bearer <CRON_SECRET>`. It returns counts only.
+
+| Salesforce route | Purpose |
+|---|---|
+| `GET storage/keys[/{after}]` | Keys of files Salesforce points to and has not deleted, 2,000 a page in receipt Id order. `{keys, next}`; pass `next` as `{after}` for the following page. |
+| `GET storage/due` | `{months, keys}`: files whose retention period has ended, at most 2,000 a night. Empty while no period is set. |
+| `POST storage/report` | `{store, files, bytes, unlinked, unlinkedRemoved, missingCount, missing:[keys], expiredRemoved:[keys], problems:[text]}`. Marks deleted files on their receipts, puts each claim missing its file in front of a person once, and saves a `Hub_Storage_Check__c`. |
+
