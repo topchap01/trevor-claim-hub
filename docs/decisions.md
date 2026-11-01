@@ -200,7 +200,8 @@ Short records of the choices that shape the code, and what would change them.
     - A claim whose file is missing goes in front of a person once, in *Needs a person*.
     - Guards: nothing is deleted if the index could not be read in full, or if unlinked files are more than a tenth of the store (that pattern means a fault, such as the wrong bucket or org). If more than half the expected files are missing, it is reported as a fault and no claim is flagged.
     - Problems email the alert address once; they never mark the hub as down on the uptime check.
-  - **Retention:** `Claim_Hub_Settings__c.Invoice_Retention_Months__c`. A file is deleted when its claim was paid or not approved that many months ago, or, for a claim never completed, that many months after claims closed. Claims still with the team, approved or with a failed payment are never due. Blank (as now) keeps every file. The period itself is still Mark's decision (roadmap).
+  - **Retention:** `Claim_Hub_Settings__c.Invoice_Retention_Months__c`. A file is deleted when its claim was paid or not approved that many months ago, or, for a claim never completed, that many months after claims closed. Claims still with the team, approved or with a failed payment are never due. Blank keeps every file.
+    - **Period: 12 months (Mark, 1 Nov 2026).** Set in Wizard on 1 Nov 2026; production gets the same value when it goes live (production-checklist.md).
     - The deletion is recorded on the claim (`Internal: invoice file deleted`) and on the receipt (`Hub_File_Removed__c`); the key stays as a record of what was held.
     - Settlement dates come from the *Paid* and *Not approved* events the hub already logs, so no new field on the claim.
   - **Console panel** (*Invoice files*, per campaign): files held, space used, first received, the retention rule, deleted so far and due in the next 30 days, and the latest nightly check.

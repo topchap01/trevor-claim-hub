@@ -52,7 +52,7 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
   - Staff open a file through a 10-minute ticket. Salesforce issues it, keeping only its hash, and logs who opened it as an `Internal:` claim event.
   - This is the only everyday way in. Nobody on the team has S3 access; AWS access is Mark's alone (decisions.md #17).
   - Each S3 file carries one tag, its campaign slug. No personal data in names or tags.
-  - **Retention** is applied by the nightly storage check once `Invoice_Retention_Months__c` is set (decisions.md #17). Not yet set: every file is kept. Files no claim points to are deleted after 7 days.
+  - **Retention:** 12 months after the claim is paid or not approved (Mark, 1 Nov 2026), applied by the nightly storage check from `Invoice_Retention_Months__c` (decisions.md #17). Files no claim points to are deleted after 7 days.
 - **Logs:**
   - Claim link codes are redacted from web app logs. They are not redacted in Salesforce: each email's rendered body, with the claim link, is kept in `Claim_Notification__c.Body__c`, and `Claim_Hub_Admin` can read `Entry__c.Access_Token__c` (audit, 1 Nov 2026).
   - Security codes are never stored or emailed in readable form: the outbox keeps `[code not stored]`.

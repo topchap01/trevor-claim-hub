@@ -13,7 +13,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [x] Address on Electrolux claims: full postal address and mobile, plus everything the current Electrolux build collects (Mark, 31 Oct 2026; decisions.md #13).
 - [ ] Gender and age? (Some weekly reports use them.) Address is decided for Electrolux only; other clients not yet.
 - [ ] Marketing opt-in wording for Electrolux, and whose marketing it covers. Needed before the addresses can be used for marketing: the current forms send "no consent" to C4C on every claim (decisions.md #13).
-- [ ] Invoice retention period (suggested: 12 months after payment). The hub applies it automatically once set (decisions.md #17); until then every file is kept.
+- [x] Invoice retention period: 12 months after the claim is paid or not approved, or after claims close for a claim never completed (Mark, 1 Nov 2026; decisions.md #17). Set in Wizard; applied by the nightly check.
 - [x] Invoice access: through the claim hub only, no team access to S3, AWS access Mark's alone (Mark, 1 Nov 2026; decisions.md #17).
 - [x] Vercel Pro: Trevor has it (Mark, 31 Oct 2026).
 - [x] Campaign addresses: every campaign at `brand.entryform.claims/campaign`; a campaign's own domain is optional and points at the hub (Mark, 1 Nov 2026; decisions.md #16, replacing #10's own domain plus yourpromotion.com.au backup).
@@ -74,7 +74,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
   - [x] S3 adapter in `web/lib/files.js`, signing in through Vercel OIDC, no stored AWS keys; unit tests with a stand-in S3 (1 Nov 2026)
   - [x] AWS side, in the bucket's account (Future Unicorn, 838547582670): Vercel as an identity provider, role `trevor-claim-hub-sandbox`, bucket settings (Mark, 1 Nov 2026)
   - [x] Sandbox switched on (1 Nov 2026): OIDC federation (Team issuer) and the four variables on `trevor-claim-hub-test`; smoke test passes on all three demo campaigns (run 41320864260: 24, 21 and 22 of 22 checks); a stored invoice opened from a Wizard staff link, read back from S3
-  - [ ] Tidy-up (Mark): delete the unused `trevor-claim-hub-sandbox` role and the Vercel identity provider in the management account (143150170660)
+  - [x] Tidy-up: unused `trevor-claim-hub-sandbox` role deleted from the management account, 143150170660 (Mark, 1 Nov 2026). The Vercel identity provider there grants nothing on its own; delete it too when convenient.
   - [ ] Production role and variables, with the production project
   - [ ] Retention lifecycle rule on `invoices/`, once the period is decided
 - [ ] Production integration user, External Client App and new key pair
@@ -110,7 +110,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 - [ ] Client reporting view (read-only, per client)
 - [ ] Invoice files managed by the hub (decisions.md #17; brought forward by Mark, 1 Nov 2026)
   - [x] Built: campaign label on each file, file size on the receipt, nightly check, retention by rule, *Invoice files* panel in the console
-  - [ ] Sandbox switched on: role permission for listing and labels, `CRON_SECRET`, one check run and shown in the console
+  - [x] Sandbox switched on (1 Nov 2026): role permission for listing and labels and `CRON_SECRET` (Mark); first check SC-00001 found 6 files (0.86 MB) in `sandbox/invoices/`, 0 unlinked, 0 missing, no problems, and the console panel shows it. The 6 match the six smoke-test uploads since S3 went live. The scheduled run 3 minutes after the merge, before Wizard had the new Apex, was refused by Salesforce and deleted nothing, as designed.
   - [ ] Production: the same, with the production role
 - [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
 - [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
