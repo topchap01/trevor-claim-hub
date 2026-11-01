@@ -20,6 +20,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] What the bare domain entryform.claims shows: nothing or a short Trevor page. *Not "nothing" today:* `entryform.claims` (redirecting to `www`) and `www.entryform.claims` are on the sandbox project, so `www.entryform.claims/<slug>` shows the sandbox demo campaigns and lodges into Wizard (audit, 1 Nov 2026). Recommended: remove both from the sandbox project now; add them to the production project when it exists.
 - [ ] Email sending domain: send claimant emails from an entryform.claims address, or keep each campaign's own sender?
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
+- [ ] Design must be easy, cheap and painless, but utterly respectful (Mark, 2 Nov 2026; decisions.md #10). Open: what the studio hands over today (Figma, PDF, Photoshop or a built microsite), which decides how the hub turns it into a page.
 - [x] AWS account for production invoice storage: bucket `trevor-claim-hub` in ap-southeast-2, for receipts off Salesforce (Mark, 1 Nov 2026; decisions.md #6).
 - [x] Sandbox invoices in the same bucket under `sandbox/`, with their own role and a 30-day expiry (Mark, 1 Nov 2026; decisions.md #6).
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
