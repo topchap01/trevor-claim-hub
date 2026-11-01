@@ -19,7 +19,8 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] What the bare domain entryform.claims shows: nothing (as now) or a short Trevor page.
 - [ ] Email sending domain: send claimant emails from an entryform.claims address, or keep each campaign's own sender?
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
-- [ ] AWS account for production invoice storage.
+- [x] AWS account for production invoice storage: bucket `trevor-claim-hub` in ap-southeast-2, for receipts off Salesforce (Mark, 1 Nov 2026; decisions.md #6).
+- [ ] Sandbox invoices in the same bucket under `sandbox/`, with their own role and a 30-day expiry (recommended), or in a separate test bucket? Decides the sandbox role in runbook, *Invoice storage on S3*.
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
 - [x] Next mechanics: prize draw first, then instant win (Mark, 31 Oct 2026; decisions.md #14).
 - [ ] Where gift with purchase sits in that order.
@@ -45,7 +46,13 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 
 Brought forward on 31 October 2026, because a claimant who can't find their way back is a support call on every campaign: returning claimants (decisions.md #12). Built in PR #4, but its Apex is not yet in Wizard and its Apex tests have not run (audit, 31 Oct 2026). It goes to production with the rest of `salesforce/force-app`, including the new `Entry__c.Hub_Mobile_Key__c` field.
 
-- [ ] S3 adapter for invoice files, Sydney bucket with retention rule
+- [ ] Invoice files on S3, not Salesforce (decisions.md #6)
+  - [x] Bucket `trevor-claim-hub`, ap-southeast-2 (Mark, 1 Nov 2026)
+  - [x] S3 adapter in `web/lib/files.js`, signing in through Vercel OIDC, no stored AWS keys; unit tests with a stand-in S3 (1 Nov 2026)
+  - [ ] AWS side (Mark, in the AWS console): Vercel as an identity provider, the sandbox role, bucket settings (runbook, *Invoice storage on S3*)
+  - [ ] Sandbox switched on: four environment variables on `trevor-claim-hub-test`, smoke test passes on all three demo campaigns, an invoice opens from Salesforce
+  - [ ] Production role and variables, with the production project
+  - [ ] Retention lifecycle rule on `invoices/`, once the period is decided
 - [ ] Production integration user, External Client App and new key pair
 - [ ] Deploy `salesforce/force-app` and the legacy trigger guard to production
 - [ ] Production Vercel project on Pro, custom domain, rate-limit rule, uptime monitor on `/api/health`

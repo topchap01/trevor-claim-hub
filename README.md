@@ -38,7 +38,7 @@ cd web && npm ci && npm run lint && npm test && npm run build
 node scripts/smoke-test.mjs http://127.0.0.1:3100 aeg-nz-cashback
 ```
 
-4. **Run the web app locally.** Copy `web/.env.example` to `web/.env.local` and fill it in (see the file). Then run `npm run dev`. Without `BLOB_READ_WRITE_TOKEN`, invoices are stored in Salesforce Files instead of Vercel Blob.
+4. **Run the web app locally.** Copy `web/.env.example` to `web/.env.local` and fill it in (see the file). Then run `npm run dev`. Without the S3 variables or `BLOB_READ_WRITE_TOKEN`, invoices are stored in Salesforce Files. S3 only works on Vercel, which supplies the OIDC token, so leave the S3 variables out locally.
 
 ## Quality gates
 

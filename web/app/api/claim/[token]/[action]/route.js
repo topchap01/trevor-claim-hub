@@ -1,5 +1,5 @@
 import { hub, json, okToken, readJson, bad, clientIp } from '@/lib/sf';
-import { blobEnabled, storeInvoice, removeFile } from '@/lib/files';
+import { fileStoreEnabled, storeInvoice, removeFile } from '@/lib/files';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -26,7 +26,7 @@ export async function POST(req, { params: paramsP }) {
   if (params.action === 'chat') body.messages = Array.isArray(body.messages) ? body.messages.slice(-12) : [];
 
   let fileKey;
-  if (params.action === 'receipt' && blobEnabled()) {
+  if (params.action === 'receipt' && fileStoreEnabled()) {
     try { fileKey = await storeInvoice(params.token, body.base64, body.contentType || 'image/jpeg'); }
     catch (err) {
       if (err.status) return bad(err.message, err.status);

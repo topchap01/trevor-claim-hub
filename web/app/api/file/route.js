@@ -14,11 +14,11 @@ export async function GET(req) {
   if (!t || !/^[A-Za-z0-9_-]{40,64}$/.test(t)) return notFound();
   const r = await hub(`files/${t}`);
   if (r.status !== 200 || !r.data.key) return notFound();
-  const file = await readFile(r.data.key).catch(() => null);
-  if (!file || file.statusCode !== 200) return notFound();
+  const file = await readFile(r.data.key).catch((err) => { console.error('invoice read failed', err.name || err.message); return null; });
+  if (!file) return notFound();
   return new Response(file.stream, {
     headers: {
-      'Content-Type': file.blob.contentType || 'application/octet-stream',
+      'Content-Type': file.contentType || 'application/octet-stream',
       'Content-Disposition': 'inline',
       // The bytes came from a claimant: show them, but never let them run as a page on this domain
       'Content-Security-Policy': "sandbox; default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
