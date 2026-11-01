@@ -2,18 +2,19 @@ name: Annotation probe (temporary)
 on:
   push:
     branches: [feature/wizard-console]
+permissions:
+  contents: read
+  checks: write
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Emit notices of growing size
+      - name: Write a result check run
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           node -e '
-          const enc=s=>s.replace(/%/g,"%25").replace(/\r/g,"%0D").replace(/\n/g,"%0A");
-          for (const n of [1000, 4000, 8000, 16000, 32000, 64000]) {
-            const body = ("line " + n + " " + "x".repeat(70) + "\n").repeat(Math.ceil(n/80)).slice(0,n);
-            console.log(`::notice title=probe ${n}::${enc(body)}`);
-          }
-          for (let i=0;i<12;i++) console.log(`::notice title=count ${i}::small ${i}`);'
-      - name: Second step notices
-        run: for i in 1 2 3; do echo "::notice title=step2 $i::hello $i"; done
+          const text = ("row " + "y".repeat(90) + "\n").repeat(600).slice(0, 60000);
+          require("fs").writeFileSync("body.json", JSON.stringify({ name: "Wizard result probe-1", head_sha: process.env.GITHUB_SHA, status: "completed", conclusion: "success",
+            output: { title: "probe ok", summary: "Rows: 600", text } }));'
+          gh api repos/${{ github.repository }}/check-runs --input body.json --jq '"created " + (.id|tostring)'
