@@ -52,7 +52,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
   - [x] S3 adapter in `web/lib/files.js`, signing in through Vercel OIDC, no stored AWS keys; unit tests with a stand-in S3 (1 Nov 2026)
   - [x] AWS side, in the bucket's account (Future Unicorn, 838547582670): Vercel as an identity provider, role `trevor-claim-hub-sandbox`, bucket settings (Mark, 1 Nov 2026)
   - [x] Sandbox switched on (1 Nov 2026): OIDC federation (Team issuer) and the four variables on `trevor-claim-hub-test`; smoke test passes on all three demo campaigns (run 41320864260: 24, 21 and 22 of 22 checks); a stored invoice opened from a Wizard staff link, read back from S3
-  - [ ] Tidy-up (Mark): delete the unused `trevor-claim-hub-sandbox` role and the Vercel identity provider in the management account (143150170660)
+  - [x] Tidy-up: unused `trevor-claim-hub-sandbox` role deleted from the management account, 143150170660 (Mark, 1 Nov 2026). The Vercel identity provider there grants nothing on its own; delete it too when convenient.
   - [ ] Production role and variables, with the production project
   - [ ] Retention lifecycle rule on `invoices/`, once the period is decided
 - [ ] Production integration user, External Client App and new key pair
