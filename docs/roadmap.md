@@ -54,7 +54,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 - [ ] Campaign addresses on entryform.claims (decisions.md #16). Brought forward on 1 Nov 2026: it replaces per-campaign DNS and the yourpromotion.com.au backup.
   - [x] Domain bought and run on Vercel's DNS; `test.entryform.claims` and `*.test.entryform.claims` on the sandbox project (1 Nov 2026)
   - [x] Web app serves `brand.<root>/campaign`; builder asks for the brand and sets the address; console shows the short address
-  - [ ] Wizard: `Hub_Root_Domain__c` set and the three sandbox campaigns moved to their brand addresses
+  - [x] Wizard: `Hub_Root_Domain__c = test.entryform.claims`, the three demo campaigns on their brand addresses; deployed with #13 (deploy ID 0Af9p00000ZiN82CAF, 71 of 71 tests), claim journey passing on all three (1 Nov 2026)
   - [ ] Production project: `entryform.claims` and `*.entryform.claims`, `HUB_ROOT_DOMAIN=entryform.claims`
   - [ ] A campaign's own domain pointed at the hub, when a client wants one (optional)
 - [ ] Electrolux claim fields (decisions.md #13). Needed before the first Electrolux campaign on the hub. Built as a campaign setting the builder turns on, not hard-coded to Electrolux, so another client can use it:
