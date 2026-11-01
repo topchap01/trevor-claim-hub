@@ -67,6 +67,8 @@ The health route reports these counts:
 3. The merge runs the **Load bank registers (Wizard)** GitHub job. It checks the files, signs in to Wizard, upserts every row, deletes rows the registers no longer list, then checks Salesforce holds exactly the rows in the files. The row counts appear on the job's summary page. To reload without new files (after a sandbox refresh), run the job by hand from the Actions tab.
 4. The job stops without changing anything if a file has suspiciously few rows. It loads Wizard only; production needs Mark's approval and `--approved-for-production` (production-checklist.md).
 
+**Query or run Apex in Wizard from a chat.** Chats have no Salesforce login. `node scripts/wizard.mjs query|tooling-query|apex|describe ...` starts the **Wizard console** GitHub job, which signs in with the `SF_SANDBOX_*` secrets, checks the org is a sandbox, runs the request and returns the result. Each call takes 1 to 2 minutes. How chats use it, and the rules: `.claude/skills/wizard/SKILL.md`. People can run the same job from the Actions tab.
+
 **Schedule background jobs** after a deploy or sandbox refresh:
 
 ```bash
