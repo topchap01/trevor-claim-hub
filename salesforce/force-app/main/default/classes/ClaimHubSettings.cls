@@ -24,4 +24,22 @@ public without sharing class ClaimHubSettings {
     public static String alertEmail() { return s().Alert_Email__c; }
     public static String model() { return String.isBlank(s().Model__c) ? 'claude-sonnet-4-6' : s().Model__c; }
     public static String fileBaseUrl() { return s().File_Base_URL__c; }
+    /** The hub's own domain, e.g. entryform.claims. Campaigns live at https://brand.root/campaign (decisions.md #16). */
+    public static String rootDomain() { return String.isBlank(s().Hub_Root_Domain__c) ? null : s().Hub_Root_Domain__c.trim().toLowerCase().removeEnd('.'); }
+
+    /**
+     * A campaign's public page. On a brand subdomain of the root (https://aeg.entryform.claims) the brand part of the slug is
+     * dropped (aeg-nz-cashback shows as /nz-cashback); on any other address the full slug is used.
+     */
+    public static String pageUrl(String baseUrl, String slug) {
+        if (String.isBlank(baseUrl) || String.isBlank(slug)) return null;
+        String base = baseUrl.removeEnd('/');
+        String root = rootDomain();
+        String host = base.substringAfter('://').substringBefore('/').toLowerCase();
+        if (root != null && host.endsWith('.' + root)) {
+            String brand = host.removeEnd('.' + root);
+            if (!brand.contains('.') && slug.startsWith(brand + '-')) return base + '/' + slug.removeStart(brand + '-');
+        }
+        return base + '/' + slug;
+    }
 }

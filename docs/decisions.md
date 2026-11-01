@@ -76,7 +76,7 @@ Short records of the choices that shape the code, and what would change them.
 - What stays common is the claim engine: rules, checks, the claim record, emails, payments.
 - **How the design is delivered (Mark, 31 Oct 2026): the hub hosts it.** The studio's page (HTML, CSS, images, fonts) is attached to the campaign and served by the hub, with the standard claim form placed where the page marks it. No code deploy per campaign. No scripts are allowed in a design, because the same page takes bank details; the hub strips them.
 - The claim steps (form, private claim page, serials, bank details) stay common to every campaign and take the campaign's colours, fonts and logo from its design.
-- **Addresses (Mark, 31 Oct 2026).** Each campaign is served on its own domain, as now (for example aegcashbackpromo.co.nz), which the builder adds to Vercel. It also gets a backup address on yourpromotion.com.au as soon as it is built, for testing, client sign-off and late DNS. Claim links carry the claim code and campaign, so reusing a domain for a brand's next campaign does not break earlier claims.
+- **Addresses (Mark, 31 Oct 2026). Replaced by #16 on 1 Nov 2026.** ~~Each campaign is served on its own domain, as now (for example aegcashbackpromo.co.nz), which the builder adds to Vercel. It also gets a backup address on yourpromotion.com.au as soon as it is built, for testing, client sign-off and late DNS.~~ Still true: claim links carry the claim code and campaign, so reusing an address for a brand's next campaign does not break earlier claims.
 - **Not now (Mark, 31 Oct 2026):** source tags on QR codes for counting claims by channel.
 - *Found while scoping:* the hub's security policy allows images and fonts only from its own address, and every page is marked noindex. Both must change per campaign before go-live (production-checklist.md).
 
@@ -131,6 +131,24 @@ Short records of the choices that shape the code, and what would change them.
 - *Marketing needs consent, which the current build does not capture.* `By_continuing_you_agree_to_Electrolux_s__c` was unticked on all 4,125 Electrolux claims in the last 180 days, so C4C has been sending `dataProtectionConsent: N` on every claim. Collecting an address does not by itself allow it to be used for marketing. The opt-in wording and who it names (Electrolux, Trevor or both) stay with Mark (production-checklist.md, *Consent wording*).
 - *Not decided here:* gender and age; whether PNC is compulsory; when hub claims are sent to C4C. All three stay open in roadmap.md.
 - *Revisit if* Electrolux takes C4C data by API (decisions.md #1a) and its own schema asks for something else.
+
+**16. entryform.claims is the hub's own domain. Every campaign lives at `brand.entryform.claims/campaign`.** *(Mark, 1 Nov 2026. Replaces the addresses part of #10.)*
+- *What Mark decided:*
+  - entryform.claims (bought 1 Nov 2026, registered and run on Trevor's Vercel team) is the main address for every campaign. All claim links in emails use it. It replaces yourpromotion.com.au as the backup address.
+  - The address is the brand's subdomain plus the campaign: `aeg.entryform.claims/nz-cashback`. A brand keeps its subdomain from campaign to campaign.
+  - A campaign's own domain (such as aegcashbackpromo.co.nz) is optional, for the pack and the ads, and points at the hub.
+  - The sandbox runs at `test.entryform.claims`, with brands under it: `aeg.test.entryform.claims/nz-cashback`. The bare domain and brand subdomains of entryform.claims are kept for the production project.
+- *Why:*
+  - one domain Trevor owns: no DNS to arrange per campaign, no waiting on a client's IT, and a campaign is reachable the moment it is built (the one-hour goal in roadmap.md);
+  - one wildcard certificate and one place to set security and search rules, instead of one per campaign;
+  - the brand subdomain keeps each client's pages and cookies apart, which the client self-serve plan needs;
+  - the name says what the page is for, which helps claimants trust the link in an email.
+- *How it works:*
+  - The Salesforce slug is `brand-campaign` (`aeg-nz-cashback`). The web app reads the brand from the host and rebuilds the slug, so no data changes shape. A brand's subdomain only ever serves that brand's campaigns, pages and design files; anything else is not found.
+  - The full slug on its own brand (`aeg.entryform.claims/aeg-nz-cashback`) redirects to the short address. Every other host (the bare domain, the `*.vercel.app` addresses, a campaign's own domain) keeps the plain `/slug` addresses, so nothing that worked before stops working.
+  - The web app's `HUB_ROOT_DOMAIN` and Salesforce's `Claim_Hub_Settings__c.Hub_Root_Domain__c` hold the root (`test.entryform.claims` in the sandbox, `entryform.claims` in production). The builder asks for the brand and sets the campaign's base URL from them.
+- *Not decided here:* what the bare domain `entryform.claims` shows (nothing, as now, or a short Trevor page); the email sending domain; whether old campaign domains redirect to the hub or serve the pages themselves.
+- *Revisit if* a client insists its campaign must show only its own domain in the address bar.
 
 ## Known follow-ups
 

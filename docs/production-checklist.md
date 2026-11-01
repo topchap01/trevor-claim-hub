@@ -12,7 +12,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] **Invoice retention period** (suggested: 12 months after payment, unless client contracts say otherwise), and who may open invoice files.
 - [ ] **AWS account** for the production invoice store (S3, Sydney). Agreed in principle on 30 Oct 2026; see decisions.md #6.
 - [x] **Vercel plan.** Trevor has Vercel Pro (Mark, 31 Oct 2026).
-- [x] **Campaign addresses.** Own domain per campaign, plus a backup on yourpromotion.com.au (decisions.md #10).
+- [x] **Campaign addresses.** Every campaign at `brand.entryform.claims/campaign` (Mark, 1 Nov 2026; decisions.md #16, replacing #10).
 - [ ] **Confirmation of Payee for batch payments.** Ask Trevor's paying bank whether it is offered on payment file uploads or by API, in NZ and AU (decisions.md #11).
 
 ## Salesforce production changes
@@ -56,7 +56,8 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] New Vercel project, or production environment, connected to this repository's `main` branch.
 - [ ] Environment variables: `SF_LOGIN_URL` (`https://login.salesforce.com` or the My Domain), `SF_AUDIENCE=https://login.salesforce.com`, `SF_USERNAME`, `SF_CLIENT_ID`, `SF_PRIVATE_KEY` (sensitive), and `BLOB_READ_WRITE_TOKEN` (from connecting a production Blob store).
 - [ ] Set `HUB_ENV=production` to remove the sandbox banner. Leave `HUB_HOME_SLUG` unset, so the bare domain shows nothing.
-- [ ] Custom domain and HTTPS.
+- [ ] Domains `entryform.claims` and `*.entryform.claims` on the production project (both already on Trevor's Vercel team; the wildcard needs Vercel's nameservers, which the domain uses). Set `HUB_ROOT_DOMAIN=entryform.claims` (decisions.md #16).
+- [ ] `Claim_Hub_Settings__c.Hub_Root_Domain__c = entryform.claims` in production, so the builder gives campaigns their brand address.
 - [ ] Content security policy (`web/next.config.mjs`) allows each campaign's images and fonts. Today it allows only the hub's own address.
 - [ ] Live campaign pages indexable by search engines. Today every page sends `noindex`. Claim-status pages (`/c`) stay noindex.
 - [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny.

@@ -22,14 +22,20 @@ export default class HubCampaignBuilder extends NavigationMixin(LightningElement
     spec;
     sched;
     templateOptions = [];
-    opts = { name: '', slug: '', start: '', end: '', compareCampaignId: '', baseUrl: 'https://trevor-claim-hub-test.vercel.app', sender: '', brandColor: '#111111', termsUrl: '', enable: true };
+    opts = { name: '', slug: '', start: '', end: '', compareCampaignId: '', brand: '', sender: '', brandColor: '#111111', termsUrl: '', enable: true };
 
     @wire(templates) wiredTemplates({ data }) { if (data) this.templateOptions = data; }
 
     get hasSpec() { return !!this.spec; }
     get busyText() { return this.spec ? 'Working…' : 'Claude is reading the terms. This takes up to a minute.'; }
     get cannotRead() { return this.busy || (!this.terms && !this.pdfBase64); }
-    get cannotCreate() { return this.busy || !this.sched || !this.opts.name || !this.opts.slug || this.unsupported; }
+    get cannotCreate() { return this.busy || !this.sched || !this.opts.name || !this.opts.brand || !this.opts.slug || this.unsupported; }
+    /** How the campaign's address will read, e.g. aeg.<hub domain>/nz-cashback (decisions.md #16). */
+    get addressPreview() {
+        const b = (this.opts.brand || '').toLowerCase().trim(), s = (this.opts.slug || '').toLowerCase().trim();
+        if (!b || !s) return '';
+        return `${b}.<hub domain>/${s.startsWith(b + '-') ? s.slice(b.length + 1) : s}`;
+    }
     get unsupported() { return this.spec && this.spec.mechanicSupported === false; }
 
     get facts() {

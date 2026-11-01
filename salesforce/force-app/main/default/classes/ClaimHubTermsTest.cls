@@ -91,4 +91,41 @@ private class ClaimHubTermsTest {
         System.assertNotEquals(null, ClaimHubTerms.templates());
         System.assertEquals('', ClaimHubTerms.issuesText(new Map<String, Object>()));
     }
+
+    // decisions.md #16: campaigns live at https://brand.root/campaign
+    @isTest static void buildsOnTheBrandAddress() {
+        Map<String, Object> o = new Map<String, Object>{ 'name' => 'Brand addr', 'brand' => 'TestBrand', 'slug' => 'summer', 'start' => '2026-10-29', 'end' => '2026-12-31' };
+
+        Boolean refused = false;
+        try { ClaimHubTerms.build(spec(), o.clone()); } catch (ClaimHubTerms.TermsException ex) { refused = ex.getMessage().contains('root domain'); }
+        System.assert(refused, 'needs the root domain set');
+
+        ClaimHubSettings.current = new Claim_Hub_Settings__c(Hub_Root_Domain__c = 'Test.EntryForm.Claims.');
+        Id cid = ClaimHubTerms.build(spec(), o.clone());
+        Promotional_Campaign__c c = [SELECT Hub_Slug__c, Hub_Base_URL__c FROM Promotional_Campaign__c WHERE Id = :cid];
+        System.assertEquals('testbrand-summer', c.Hub_Slug__c, 'slug carries the brand');
+        System.assertEquals('https://testbrand.test.entryform.claims', c.Hub_Base_URL__c);
+        System.assertEquals('https://testbrand.test.entryform.claims/summer', ClaimHubSettings.pageUrl(c.Hub_Base_URL__c, c.Hub_Slug__c));
+
+        // A slug already carrying the brand is not prefixed twice
+        Map<String, Object> o2 = o.clone(); o2.put('slug', 'testbrand-winter');
+        Id cid2 = ClaimHubTerms.build(spec(), o2);
+        System.assertEquals('testbrand-winter', [SELECT Hub_Slug__c FROM Promotional_Campaign__c WHERE Id = :cid2].Hub_Slug__c);
+
+        Map<String, Object> bad = o.clone(); bad.put('brand', 'not a brand!'); bad.put('slug', 'autumn');
+        refused = false;
+        try { ClaimHubTerms.build(spec(), bad); } catch (ClaimHubTerms.TermsException ex) { refused = true; }
+        System.assert(refused, 'brand must be a valid subdomain');
+    }
+
+    @isTest static void pageUrlUsesTheShortAddressOnlyOnABrandSubdomain() {
+        ClaimHubSettings.current = new Claim_Hub_Settings__c(Hub_Root_Domain__c = 'entryform.claims');
+        System.assertEquals('https://aeg.entryform.claims/nz-cashback', ClaimHubSettings.pageUrl('https://aeg.entryform.claims/', 'aeg-nz-cashback'));
+        System.assertEquals('https://aeg.entryform.claims/electrolux-x', ClaimHubSettings.pageUrl('https://aeg.entryform.claims', 'electrolux-x'), 'another brand: full slug');
+        System.assertEquals('https://claims.example.com/aeg-nz-cashback', ClaimHubSettings.pageUrl('https://claims.example.com', 'aeg-nz-cashback'));
+        System.assertEquals(null, ClaimHubSettings.pageUrl(null, 'aeg-nz-cashback'));
+        ClaimHubSettings.current = new Claim_Hub_Settings__c();
+        System.assertEquals(null, ClaimHubSettings.rootDomain());
+        System.assertEquals('https://aeg.entryform.claims/aeg-nz-cashback', ClaimHubSettings.pageUrl('https://aeg.entryform.claims', 'aeg-nz-cashback'), 'no root set: full slug');
+    }
 }
