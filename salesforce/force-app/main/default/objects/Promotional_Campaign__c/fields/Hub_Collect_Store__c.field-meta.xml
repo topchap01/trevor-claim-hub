@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Hub_Collect_Store__c</fullName>
+    <defaultValue>false</defaultValue>
+    <inlineHelpText>The claim form asks where the claimant bought: store from the list, store suburb and (in Australia) store state. On for Electrolux campaigns (decisions.md #13).</inlineHelpText>
+    <label>Claim Hub Collect Store</label>
+    <type>Checkbox</type>
+</CustomField>

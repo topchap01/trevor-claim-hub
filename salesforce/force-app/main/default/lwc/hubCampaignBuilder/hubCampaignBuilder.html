@@ -42,6 +42,11 @@
                     <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-4"><lightning-input label="Brand colour" data-k="brandColor" value={opts.brandColor} onchange={onOpt}></lightning-input></div>
                     <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2"><lightning-input label="Send emails from" data-k="sender" value={opts.sender} onchange={onOpt} field-level-help="Must be an organisation-wide email address. Blank uses the template campaign's address."></lightning-input></div>
                     <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2"><lightning-input label="Terms page URL" data-k="termsUrl" value={opts.termsUrl} onchange={onOpt}></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-4 slds-m-top_small"><lightning-input type="toggle" label="Ask for the claimant's postal address" data-k="collectAddress" checked={opts.collectAddress} onchange={onOpt} message-toggle-active="" message-toggle-inactive="" field-level-help="On for Electrolux campaigns: the address goes to Electrolux through C4C."></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-4 slds-m-top_small"><lightning-input type="toggle" label="Ask which store they bought from" data-k="collectStore" checked={opts.collectStore} onchange={onOpt} message-toggle-active="" message-toggle-inactive="" field-level-help="Store from a list, its suburb and (in Australia) its state. On for Electrolux campaigns."></lightning-input></div>
+                    <template lwc:if={opts.collectStore}>
+                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2 slds-m-top_small"><lightning-textarea label="Stores to offer, one per line" data-k="stores" value={opts.stores} onchange={onOpt} field-level-help="Spell them as reports should show them (for example Harvey Norman). Other is always added. Blank lets the claimant type the store."></lightning-textarea></div>
+                    </template>
                 </div>
                 <template lwc:if={sched}>
                     <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_small">

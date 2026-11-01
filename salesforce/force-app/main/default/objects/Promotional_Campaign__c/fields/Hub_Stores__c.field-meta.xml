@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Hub_Stores__c</fullName>
+    <inlineHelpText>Stores offered on the claim form, one per line, as they should appear in reports (for example Harvey Norman). "Other" is always added. Blank uses the eligible retailers; if those are blank too, the claimant types the store name.</inlineHelpText>
+    <label>Claim Hub Stores</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>8</visibleLines>
+</CustomField>

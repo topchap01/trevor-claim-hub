@@ -56,6 +56,8 @@ The health route reports these counts:
 2. Paste the terms or attach the PDF.
 3. Check what was read and every issue raised.
 4. Set the dates and web address name. Optionally compare products with a past campaign.
+   - *Ask for the claimant's postal address* and *Ask which store they bought from* are on for Electrolux and AEG terms (decisions.md #13). Check the list of stores to offer: spell each one as reports should show it (for example `Harvey Norman`, `The Good Guys`). Other is added for you.
+   - These can also be changed later on the campaign record: *Claim Hub Collect Address*, *Claim Hub Collect Store*, *Claim Hub Stores*.
 5. Create the campaign. Open the claim page and run one test claim.
 
 **Refresh the bank registers** monthly, after AusPayNet's update on the first NSW business day, and after a sandbox refresh:
@@ -66,6 +68,8 @@ The health route reports these counts:
 2. Replace the files in `data/bank-registers/` (names in that folder's README) on a branch, open a pull request and merge it.
 3. The merge runs the **Load bank registers (Wizard)** GitHub job. It checks the files, signs in to Wizard, upserts every row, deletes rows the registers no longer list, then checks Salesforce holds exactly the rows in the files. The row counts appear on the job's summary page. To reload without new files (after a sandbox refresh), run the job by hand from the Actions tab.
 4. The job stops without changing anything if a file has suspiciously few rows. It loads Wizard only; production needs Mark's approval and `--approved-for-production` (production-checklist.md).
+
+**Query or run Apex in Wizard from a chat.** Chats have no Salesforce login. `node scripts/wizard.mjs query|tooling-query|apex|describe ...` starts the **Wizard console** GitHub job, which signs in with the `SF_SANDBOX_*` secrets, checks the org is a sandbox, runs the request and returns the result. Each call takes 1 to 2 minutes. How chats use it, and the rules: `.claude/skills/wizard/SKILL.md`. People can run the same job from the Actions tab.
 
 **Schedule background jobs** after a deploy or sandbox refresh:
 
@@ -93,6 +97,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 730 -subj "/CN=trevor-claim-hub"
 
 - **Salesforce:**
   1. `sf project deploy start -d salesforce/force-app --test-level RunSpecifiedTests` with every `*Test` class. CI does this.
+  - **To Wizard without a CLI sign-in:** push the commit to the `deploy/wizard` branch (`git push origin HEAD:deploy/wizard --force`), or run *Deploy to Wizard* from the Actions tab. The job signs in with the CI sandbox secrets, stops if the org is not a sandbox, deploys with the hub tests, runs `scripts/apex/wizard-setup.apex` (demo campaign settings) and smoke-tests the three demo campaigns on the sandbox address. Deploy and smoke results appear on the check.
   2. Deploy `salesforce/legacy-patches` separately, with the legacy test classes.
 - **Web:** pushing to `main` deploys to production through Vercel's Git integration. Pull requests get preview deployments.
 - **Rollback:**

@@ -1,7 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, money, bestTier } from '@/lib/client';
+import { api, money, bestTier, addressFor } from '@/lib/client';
 import BankFields from '@/components/BankFields';
 import { SendLinkButton } from './ResendForm';
 
@@ -18,6 +18,12 @@ export default function ClaimForm({ campaign }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [existing, setExisting] = useState(''); // the email a claim already exists for, so we offer its link in one tap
+  // Postal address and store, when the campaign asks (decisions.md #13)
+  const [addr, setAddr] = useState({ line: '', unit: '', suburb: '', postcode: '', state: '' });
+  const [store, setStore] = useState({ retailer: '', name: '', suburb: '', state: '' });
+  const nz = campaign.country === 'NZ';
+  const stores = campaign.stores || [];
+  const storeNamed = !stores.length || store.retailer === 'Other';
 
   const byCategory = useMemo(() => {
     const m = {};
@@ -41,6 +47,18 @@ export default function ClaimForm({ campaign }) {
     if (chosen.length < min) return setError(`Choose at least ${min} participating appliances.`);
     if (bySpend && chosen.some((r) => !(Number(r.price) > 0))) return setError('Add the price you paid for each appliance. The cashback depends on your total spend.');
     if (shortBy) return setError(`This promotion needs a combined spend of at least ${cur(campaign.minSpend)}. Your total is ${cur(spend)}.`);
+    let address = null;
+    if (campaign.collectAddress) {
+      const a = addressFor(addr, campaign.regions);
+      if (a.error) return setError(a.error);
+      address = a.address;
+    }
+    if (campaign.collectStore) {
+      if (stores.length && !store.retailer) return setError('Please choose the store you bought from.');
+      if (storeNamed && !store.name.trim()) return setError('Please add the store name.');
+      if (!store.suburb.trim()) return setError('Please add the suburb or town of the store.');
+      if (!nz && !store.state) return setError('Please choose the state the store is in.');
+    }
     if (!agree) return setError('Please confirm you have read the terms.');
     setBusy(true);
     try {
@@ -49,6 +67,8 @@ export default function ClaimForm({ campaign }) {
         ...me,
         products: chosen.map((r) => ({ promoProductId: r.promoProductId, price: r.price || null })),
         bank: addBank ? bank : null,
+        ...(address ? { address } : {}),
+        ...(campaign.collectStore ? { store: { retailer: stores.length ? store.retailer : 'Other', name: storeNamed ? store.name.trim() : '', suburb: store.suburb.trim(), state: nz ? '' : store.state } } : {}),
       });
       router.push(`/c?token=${encodeURIComponent(out.token)}&s=${encodeURIComponent(campaign.slug)}&new=1`);
     } catch (err) {
@@ -88,6 +108,38 @@ export default function ClaimForm({ campaign }) {
       </div>
       {(campaign.retailers || campaign.singleTransaction) && <p className="muted" style={{ margin: '6px 0 0' }}>{[campaign.retailers && `Bought from ${campaign.retailers}`, campaign.singleTransaction && 'all on one invoice'].filter(Boolean).join(', ')}. Use the price on your invoice after any discount.</p>}
 
+      {campaign.collectStore && (
+        <fieldset className="group">
+          <legend>Where did you buy?</legend>
+          {stores.length > 0 && (
+            <>
+              <label htmlFor="st">Store</label>
+              <select id="st" value={store.retailer} onChange={(e) => setStore({ ...store, retailer: e.target.value })}>
+                <option value="">Choose the store</option>
+                {stores.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </>
+          )}
+          {storeNamed && (
+            <>
+              <label htmlFor="stn">{stores.length ? 'Store name' : 'Store'}</label>
+              <input id="stn" type="text" value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} />
+            </>
+          )}
+          <div className={nz ? '' : 'row2'}>
+            <div><label htmlFor="sts">Store suburb or town</label><input id="sts" type="text" value={store.suburb} onChange={(e) => setStore({ ...store, suburb: e.target.value })} /></div>
+            {!nz && (
+              <div><label htmlFor="stst">Store state</label>
+                <select id="stst" value={store.state} onChange={(e) => setStore({ ...store, state: e.target.value })}>
+                  <option value="">Choose</option>
+                  {(campaign.regions || []).map((r) => <option key={r.value} value={r.value}>{r.value}</option>)}
+                </select>
+              </div>
+            )}
+          </div>
+        </fieldset>
+      )}
+
       <div className="row2">
         <div><label htmlFor="fn">First name</label><input id="fn" type="text" autoComplete="given-name" required value={me.firstName} onChange={(e) => setMe({ ...me, firstName: e.target.value })} /></div>
         <div><label htmlFor="ln">Last name</label><input id="ln" type="text" autoComplete="family-name" required value={me.lastName} onChange={(e) => setMe({ ...me, lastName: e.target.value })} /></div>
@@ -97,6 +149,27 @@ export default function ClaimForm({ campaign }) {
       <p className="muted" style={{ margin: '4px 0 0' }}>We send your private claim link here. Use an inbox you can open.</p>
       <label htmlFor="mb">Mobile</label>
       <input id="mb" type="tel" autoComplete="tel" required value={me.mobile} onChange={(e) => setMe({ ...me, mobile: e.target.value })} />
+
+      {campaign.collectAddress && (
+        <fieldset className="group">
+          <legend>Your postal address</legend>
+          <label htmlFor="ad1">Street number and name</label>
+          <input id="ad1" type="text" autoComplete="address-line1" placeholder="12 Example Street" value={addr.line} onChange={(e) => setAddr({ ...addr, line: e.target.value })} />
+          <label htmlFor="ad2">Unit or apartment <span className="muted">(optional)</span></label>
+          <input id="ad2" type="text" autoComplete="address-line2" value={addr.unit} onChange={(e) => setAddr({ ...addr, unit: e.target.value })} />
+          <label htmlFor="ad3">{nz ? 'Suburb or town' : 'Suburb'}</label>
+          <input id="ad3" type="text" autoComplete="address-level2" value={addr.suburb} onChange={(e) => setAddr({ ...addr, suburb: e.target.value })} />
+          <div className="row2">
+            <div><label htmlFor="ad4">Postcode</label><input id="ad4" type="text" inputMode="numeric" maxLength={4} autoComplete="postal-code" value={addr.postcode} onChange={(e) => setAddr({ ...addr, postcode: e.target.value.replace(/\D/g, '') })} /></div>
+            <div><label htmlFor="ad5">{nz ? 'Region' : 'State'}</label>
+              <select id="ad5" autoComplete="address-level1" value={addr.state} onChange={(e) => setAddr({ ...addr, state: e.target.value })}>
+                <option value="">Choose</option>
+                {(campaign.regions || []).map((r) => <option key={r.value} value={r.value}>{nz ? r.label : r.value}</option>)}
+              </select>
+            </div>
+          </div>
+        </fieldset>
+      )}
 
       <label className="check" style={{ marginTop: 18 }}>
         <input type="checkbox" checked={addBank} onChange={(e) => setAddBank(e.target.checked)} />

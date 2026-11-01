@@ -128,9 +128,37 @@ Short records of the choices that shape the code, and what would change them.
 
 - *So the hub adds,* on Electrolux campaigns: unit, street number, street, suburb, postcode and state or region; the store picked from the retailer list, with its suburb and (AU) state. Street address is new: the current forms have not collected it.
 - *Where it goes:* the fields the C4C feed (`BambooElectroluxPromotionClaimService`) already reads, so Electrolux receives it without changes to that class: `Consumer_Unit_No__c`, `Consumer_Street_Number__c`, `Consumer_Street_Stamp__c`, `Consumer_Suburb__c`, `Consumer_PostalCode_Stamp__c`, `Consumer_State_Stamp__c` on the Entry; `Retailer__c`, `Retailer_Suburb__c`, `Retailer_State__c` on the receipt. On NZ claims the mobile also goes to `Consumer_Contact_Number__c`, as the old forms do. State and region values must match `State_Mapping__mdt` (for example `NSW`, `Auckland`), or C4C receives no state or country.
+- *Found while building (31 Oct 2026):* the old forms put the address on the Lead, and the legacy `EntryCreation` trigger copies it to the Entry (`Lead_To_Entry_Mapping__mdt`). An AU state goes in `Lead.State_Territory__c`, an NZ region in `Lead.Town_City__c`; both are restricted picklists, and the NZ one has no Chatham Islands, so the form doesn't offer it. The hub writes the Lead the same way, then checks the Entry's address stamps after saving, because both of those Lead fields map to the same Entry field.
 - *Marketing needs consent, which the current build does not capture.* `By_continuing_you_agree_to_Electrolux_s__c` was unticked on all 4,125 Electrolux claims in the last 180 days, so C4C has been sending `dataProtectionConsent: N` on every claim. Collecting an address does not by itself allow it to be used for marketing. The opt-in wording and who it names (Electrolux, Trevor or both) stay with Mark (production-checklist.md, *Consent wording*).
 - *Not decided here:* gender and age; whether PNC is compulsory; when hub claims are sent to C4C. All three stay open in roadmap.md.
 - *Revisit if* Electrolux takes C4C data by API (decisions.md #1a) and its own schema asks for something else.
+
+**14. After cashback: prize draw next, then instant win.** *(Mark, 31 Oct 2026)*
+- *Why this order:* a draw with winners picked at the end is the simpler build. Instant win then reuses what the draw needs: entries rather than claims, prizes, winners, prize delivery and the permit check. The win is worked out at entry instead of at the end.
+- *Not decided:* where gift with purchase sits in the order (roadmap).
+- *Found while scoping (production, read only, 31 Oct 2026).* Production already runs both mechanics:
+  - **Draws:** a staff tool, `SelectWinner` (2022). It is in current use: 140 winners on IBA Grant Burge 2027 AFL Grand Final Experience between 22 and 29 Oct 2026.
+  - **Instant wins:** `InstantWin` and `InstantWinDefinitionManual` (last changed 2021). The largest pool they have awarded is 201 prizes, on Cupio Instant Win and on BWS Grant Burge AFL Grand Final 2026.
+- *Why the hub builds its own draw rather than calling `SelectWinner`:*
+  - **Winners can come up short.** Picks go into a set, so a number drawn twice is dropped. The draw then returns fewer winners than asked for, and says nothing.
+  - **Uneven odds.** The first and last entries in the list get half the chance of everyone else, and the list has no fixed order.
+  - **No audit trail.** It uses `Math.random`, which is not a secure generator, and keeps no record that would let the draw be repeated or checked.
+  - **Fixed clock.** The time zone is fixed to Sydney, which is wrong for NZ promotions.
+  - The old instant-win engine awards by timing rather than by random moment. The first entry after a staff-set window opens wins. It also checks the prize cap without a lock. No prize in production has gone over its cap: 66 capped prizes with wins, checked 31 Oct 2026.
+- Live campaigns stay on these tools (roadmap constraint). Fixing them in production would need Mark's approval.
+
+**15. Every claimant and winner email is automatic and standard. Nothing is written or sent by hand per campaign.** *(Mark, 31 Oct 2026)*
+- *What it replaces:* today each prize campaign gets its own Salesforce email templates, built by hand for each stage. For example, Win a Weber Smokey Everyday 2026 had three, one with "Claim prize by 19/07/26" typed into its subject. Staff then send them one at a time from the entry record. A 500-winner draw would mean 500 hand sends.
+- *How the hub does it:*
+  - **One standard set of emails per mechanic, written once.**
+    - *Cashback:* the existing eight.
+    - *Prize draw and instant win:* entry received, winner, prize details received, prize sent, claim reminder, forfeited, and reserve or unclaimed prize winner, with one version for each prize type (eGift code, physical, cash to bank, experience).
+  - **Every email is triggered by an event, never sent by a person.** It goes through the outbox (#9) from the campaign's own sender address, so each one is recorded with its time, recipient and wording.
+  - **Facts come from the campaign record, never typed into wording.** That covers the prize name, dates, claim deadline and delivery method, so an email can't carry a stale date or the wrong prize. The look comes from the campaign's design (#10): logo and colour.
+  - **Staff do not edit wording, per campaign or otherwise.** The builder shows every email rendered for the campaign at sign-off, as a preview only. If something reads wrong, the campaign data or the terms are fixed, not the email.
+  - **Wording lives in this repository.** A change is reviewed once and applies to every campaign from its next send.
+- *Revisit if* a client contract requires its own wording. Even then, the change goes into the standard set as a variant, not a one-off template.
+- Live campaigns keep their current emails until they end (roadmap constraint). Hand-built winner templates stop with the first prize campaign on the hub.
 
 **16. entryform.claims is the hub's own domain. Every campaign lives at `brand.entryform.claims/campaign`.** *(Mark, 1 Nov 2026. Replaces the addresses part of #10.)*
 - *What Mark decided:*
@@ -153,8 +181,8 @@ Short records of the choices that shape the code, and what would change them.
 ## Known follow-ups
 
 - Split `ClaimHubService.lodge`, `ClaimHubTerms.build` and `ClaimHubNotifier.render` into smaller methods. Code Analyzer flags their complexity. They are fully tested, so the refactor is safe to do.
-- Move email templates out of Apex into Salesforce email templates or custom metadata, so staff can edit wording.
-- Instant-win and prize-draw mechanics: designed but not built (winning moments drawn and sealed in advance, awarded under a row lock).
+- Move email templates out of Apex into one standard set kept in this repository (#15). Not editable per campaign.
+- Prize draw, then instant win (#14). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
 - k6 load test script.
 - Build the S3 adapter in `web/lib/files.js` (bucket in ap-southeast-2: public access blocked, encrypted, versioned, lifecycle rule for retention; Vercel OIDC role scoped to the bucket).
 - Automated invoice file retention (an S3 lifecycle rule once on S3).

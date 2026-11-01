@@ -31,10 +31,19 @@ const min = Math.max(1, Number(c.body.minProducts) || 1);
 const spendEach = Math.ceil((Number(c.body.minSpend) || 0) / min) + 100;
 const items = c.body.products.slice(0, min).map((p) => ({ promoProductId: p.id, price: spendEach }));
 const person = { firstName: 'Smoke', lastName: 'Test', email: `smoke.test.${run}@example.com`, mobile: '021 555 0199', acceptedTerms: true };
+// Address and store, on campaigns that ask for them (decisions.md #13). Made up.
+const nz = c.body.country === 'NZ';
+if (c.body.collectAddress) person.address = { unit: '', streetNumber: '12', street: 'Example Street', suburb: 'Testville', postcode: nz ? '3204' : '2000', state: nz ? 'Waikato' : 'NSW' };
+if (c.body.collectStore) {
+  const first = (c.body.stores || []).find((s) => s !== 'Other');
+  person.store = first ? { retailer: first, suburb: 'Testville', state: nz ? '' : 'NSW' } : { retailer: 'Other', name: 'Example Appliances', suburb: 'Testville', state: nz ? '' : 'NSW' };
+}
 const bank = c.body.country === 'NZ' ? { name: 'S Test', account: '12-3140-0123452-00' } : { name: 'S Test', bsb: '062000', account: '12345678' };
 
 check('refuses a missing name', (await call('POST', `campaign/${SLUG}/claim`, { ...person, firstName: '', products: items })).status === 400);
 check('refuses a product from another promotion', (await call('POST', `campaign/${SLUG}/claim`, { ...person, products: [{ promoProductId: 'a0X000000000000AAA' }] })).status === 400);
+if (c.body.collectAddress) check('refuses a postcode that is not 4 digits', (await call('POST', `campaign/${SLUG}/claim`, { ...person, products: items, address: { ...person.address, postcode: '12345' } })).status === 400);
+if (c.body.collectStore) check('refuses a store missing from the list', (await call('POST', `campaign/${SLUG}/claim`, { ...person, products: items, store: { ...person.store, retailer: 'Not A Listed Store' } })).status === 400);
 check('refuses a claim without the terms ticked', (await call('POST', `campaign/${SLUG}/claim`, { ...person, acceptedTerms: false, products: items })).status === 400);
 check('refuses bad JSON', (await fetch(`${BASE}/api/campaign/${SLUG}/claim`, { method: 'POST', headers, body: 'nope' })).status === 400);
 const typo = c.body.country === 'NZ' ? { ...bank, account: '12-3140-0123453-00' } : null; // one digit off the made-up account
@@ -51,6 +60,7 @@ check('one claim per email', (await call('POST', `campaign/${SLUG}/claim`, { ...
 
 let v = await call('GET', `claim/${t}`);
 check('claim page loads', v.status === 200 && v.body.stage === 'awaiting', v);
+if (c.body.collectStore) check('the store is on the claim', !!v.body.receipts?.[0]?.store, v.body.receipts);
 check('unknown link is refused', (await call('GET', `claim/${'x'.repeat(43)}`)).status === 404);
 
 const inv = fs.readFileSync(path.join(here, 'fixtures/sample-invoice.jpg')).toString('base64');

@@ -235,6 +235,8 @@ public with sharing class ClaimHubTerms {
             Hub_Excluded_Serial_Prefixes__c = xs.isEmpty() ? null : String.join(xs, ','),
             Hub_Min_Spend__c = num(spec.get('minSpend')), Hub_Max_Cashback__c = num(spec.get('maxCashback')),
             Hub_Single_Transaction__c = spec.get('singleTransaction') == true,
+            Hub_Collect_Address__c = o.get('collectAddress') == true, Hub_Collect_Store__c = o.get('collectStore') == true,
+            Hub_Stores__c = o.get('stores') == null || String.isBlank(String.valueOf(o.get('stores'))) ? null : String.valueOf(o.get('stores')).left(32768),
             Hub_Terms_Summary__c = spec.get('summary') == null ? null : String.valueOf(spec.get('summary')),
             Hub_Spec__c = JSON.serializePretty(new Map<String, Object>{ 'fromTerms' => spec, 'schedule' => sch }).left(131072),
             Hub_Terms_Issues__c = issuesText(spec).left(32768));

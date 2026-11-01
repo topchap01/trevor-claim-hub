@@ -55,6 +55,17 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 ```
 
 - `serial`, `pnc`, `bank` and `invoice` are optional at lodge.
+- `address` and `store` are required when the campaign response has `collectAddress` or `collectStore` true, and ignored otherwise (decisions.md #13):
+
+  ```json
+  "address": { "unit": "4", "streetNumber": "12", "street": "Example Street", "suburb": "Testville", "postcode": "2000", "state": "NSW" },
+  "store": { "retailer": "Harvey Norman", "name": "", "suburb": "Testville", "state": "NSW" }
+  ```
+
+  - `state` is a value from the campaign's `regions` (AU state codes, NZ region names). `unit` is optional.
+  - `retailer` is one of the campaign's `stores`. `name` is needed when it is `Other`, or when `stores` is empty. `state` applies to AU stores only.
+  - They are saved to the fields the Electrolux C4C feed reads: the `Consumer_*` address fields on the Entry, and `Retailer__c`, `Store_Name__c`, `Retailer_Suburb__c`, `Retailer_State__c` on the claim's one receipt. A later invoice upload fills the same receipt.
+  - The address also goes on the Lead, in the fields the old forms use (`Unit_No__c`, `Street_Number__c`, `Street__c`, `Suburb__c`, `Postal_Code__c`, `Country__c`, and `State_Territory__c` for an AU state or `Town_City__c` for an NZ region). The legacy `EntryCreation` trigger copies Lead fields onto the Entry when it is created, through `Lead_To_Entry_Mapping__mdt`. Two Lead fields map to `Consumer_State_Stamp__c`, so the hub checks the saved stamps and puts them right if needed.
 - AU bank details are `{name, bsb, account}`. NZ bank details are `{name, account}`: 15 or 16 digits with a valid bank code.
 - Prices are required when the payout or eligibility depends on spend. In that case `needsPrices` is true in the campaign response.
 
@@ -73,6 +84,7 @@ Each check refuses with a 4xx before anything is saved.
 9. The serial format is valid, the serial does not start with an excluded prefix, and no serial is entered twice on the form.
 10. The basket reaches a cashback tier.
 11. The bank format is right for the country, and an NZ account number passes its bank's check digit (decisions.md #11).
+12. When the campaign asks: street number, street, suburb, a 4-digit postcode and a state or region from the list; a store from the list (or a name for `Other`), its suburb, and in Australia its state.
 
 After saving, these are flagged for the team but not refused:
 - a third or later claim from one connection in 24 hours;
