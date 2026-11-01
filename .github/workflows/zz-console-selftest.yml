@@ -1,0 +1,63 @@
+name: Wizard console self-test (temporary)
+on:
+  push:
+    branches: [feature/wizard-console]
+permissions:
+  contents: read
+  checks: write
+jobs:
+  run:
+    name: Self-test ${{ matrix.kind }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { kind: query, body: "SELECT Country__c, COUNT(Id) n FROM Hub_Bank_Branch__c GROUP BY Country__c" }
+          - { kind: apex, body: "System.debug('campaigns=' + [SELECT COUNT() FROM Promotional_Campaign__c WHERE Hub_Enabled__c = true]);" }
+          - { kind: describe, body: Hub_Bank_Branch__c }
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global @salesforce/cli
+      - name: Sign in to the sandbox
+        env:
+          SF_SANDBOX_JWT_KEY: ${{ secrets.SF_SANDBOX_JWT_KEY }}
+        run: |
+          if [ -z "$SF_SANDBOX_JWT_KEY" ]; then echo "::error title=Not run::Sandbox secrets are not set."; exit 1; fi
+          echo "$SF_SANDBOX_JWT_KEY" > server.key
+          set +e
+          OUT=$(sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
+            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci --json 2>/dev/null)
+          STATUS=$?
+          set -e
+          rm server.key
+          if [ $STATUS -ne 0 ]; then
+            REASON=$(printf '%s' "$OUT" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j={};try{j=JSON.parse(s)}catch{}console.log(String([j.name,j.message].filter(Boolean).join(": ")||s.slice(0,600)).replace(/\s+/g," ").slice(0,600))})')
+            echo "::error title=Sandbox sign-in failed::$REASON"
+            echo "SIGNIN_ERROR=$REASON" >> "$GITHUB_ENV"
+            exit 1
+          fi
+      - name: Check this is a sandbox
+        run: |
+          IS=$(sf data query -o ci -q "SELECT IsSandbox FROM Organization" --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).result.records[0].IsSandbox))')
+          if [ "$IS" != "true" ]; then echo "::error title=Stopped::The signed-in org is not a sandbox. Nothing was run."; echo "SIGNIN_ERROR=Not a sandbox, nothing was run" >> "$GITHUB_ENV"; exit 1; fi
+      - name: Run
+        env:
+          KIND: ${{ matrix.kind }}
+          BODY: ${{ matrix.body }}
+          REQUEST_ID: selftest-${{ matrix.kind }}
+        run: node scripts/wizard-console.mjs
+      - name: Publish the result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUEST_ID: selftest-${{ matrix.kind }}
+        run: |
+          if [ ! -f result.json ]; then
+            node -e 'const id=process.env.REQUEST_ID||process.env.GITHUB_RUN_ID;const why=process.env.SIGNIN_ERROR||"The job stopped before running anything. Open the run for details.";require("fs").writeFileSync("result.json",JSON.stringify({name:`Wizard result ${id}`,head_sha:process.env.GITHUB_SHA,status:"completed",conclusion:"failure",output:{title:"Not run",summary:"Not run",text:why}}))'
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/check-runs" --input result.json --jq '"Result published as check run " + (.id|tostring)'
