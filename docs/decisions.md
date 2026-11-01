@@ -86,6 +86,10 @@ Short records of the choices that shape the code, and what would change them.
 - The claim steps (form, private claim page, serials, bank details) stay common to every campaign and take the campaign's colours, fonts and logo from its design.
 - **Addresses (Mark, 31 Oct 2026). Replaced by #16 on 1 Nov 2026.** ~~Each campaign is served on its own domain, as now (for example aegcashbackpromo.co.nz), which the builder adds to Vercel. It also gets a backup address on yourpromotion.com.au as soon as it is built, for testing, client sign-off and late DNS.~~ Still true: claim links carry the claim code and campaign, so reusing an address for a brand's next campaign does not break earlier claims.
 - **Not now (Mark, 31 Oct 2026):** source tags on QR codes for counting claims by channel.
+- **Principle (Mark, 2 Nov 2026): design has to be easy, cheap and painless, but utterly respectful.** Every step from the studio's artwork to a live page is judged against both halves:
+  - *easy, cheap, painless:* no new work for the studio, no developer per campaign, no code deploy, upload once, preview, publish;
+  - *utterly respectful:* the brand's design appears as the brand made it, on phone and desktop. The hub never changes a design silently: what it cannot accept, it refuses in plain words.
+  - *Open (roadmap):* how a studio's artwork becomes a hub page without a developer. The pack format above stays the hub's internal format either way, because the safety checks run on it.
 - *Found while scoping:* the hub's security policy allows images and fonts only from its own address, and every page is marked noindex. Both must change per campaign before go-live (production-checklist.md).
 
 **11. Bank details are checked against published rules and registers: refuse only what can't be paid, flag the rest.** *(Mark, 31 Oct 2026)*
