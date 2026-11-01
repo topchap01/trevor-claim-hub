@@ -1,56 +1,14 @@
 name: Load bank registers (Wizard)
-
-# Loads data/bank-registers/ into Hub_Bank_Branch__c in the Wizard sandbox (decisions.md #11).
-# Runs when new register files land on main, or by hand from the Actions tab.
-# Sandbox only: it signs in with the SF_SANDBOX_* secrets, and the loader refuses anything that isn't a sandbox.
+run-name: "Dispatch probe ${{ inputs.request_id }}"
 on:
-  push:
-    branches: [main]
-    paths:
-      - data/bank-registers/**
-      - scripts/load-bank-register.mjs
   workflow_dispatch:
-
-concurrency:
-  group: load-bank-registers
-  cancel-in-progress: false
-
+    inputs:
+      request_id:
+        type: string
+        required: false
 jobs:
   load:
-    name: Load into Wizard
+    name: Probe only, loads nothing
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Check the files before signing in
-        run: |
-          ARGS="--nz data/bank-registers/nz-bank-branch-register.csv --au data/bank-registers/au-bsb-directory.csv"
-          if [ -f data/bank-registers/au-key-to-abbreviations.csv ]; then ARGS="$ARGS --au-key data/bank-registers/au-key-to-abbreviations.csv"; fi
-          echo "ARGS=$ARGS" >> "$GITHUB_ENV"
-          node scripts/load-bank-register.mjs $ARGS --dry-run
-      - run: npm install --global @salesforce/cli
-      - name: Sign in to the sandbox
-        env:
-          SF_SANDBOX_JWT_KEY: ${{ secrets.SF_SANDBOX_JWT_KEY }}
-        run: |
-          if [ -z "$SF_SANDBOX_JWT_KEY" ]; then echo "::error title=Not loaded::Sandbox secrets are not set."; exit 1; fi
-          echo "$SF_SANDBOX_JWT_KEY" > server.key
-          set +e
-          OUT=$(sf org login jwt --client-id "${{ secrets.SF_SANDBOX_CLIENT_ID }}" --jwt-key-file server.key \
-            --username "${{ secrets.SF_SANDBOX_USERNAME }}" --instance-url https://test.salesforce.com --alias ci --json 2>/dev/null)
-          STATUS=$?
-          set -e
-          rm server.key
-          if [ $STATUS -ne 0 ]; then
-            REASON=$(printf '%s' "$OUT" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j={};try{j=JSON.parse(s)}catch{const m=/"message":\s*"((?:[^"\\]|\\.)*)"/.exec(s);const n=/"name":\s*"((?:[^"\\]|\\.)*)"/.exec(s);j={name:n&&n[1],message:m?m[1]:s.slice(0,600)}}console.log([j.name,j.message].filter(Boolean).join(": ").replace(/\s+/g," ").slice(0,600))})')
-            echo "::error title=Sandbox sign-in failed::$REASON"
-            exit 1
-          fi
-      - name: Load
-        run: |
-          set -o pipefail
-          node scripts/load-bank-register.mjs $ARGS --org ci 2>&1 | tee load.txt || { echo "::error title=Load failed::$(tail -n 1 load.txt)"; exit 1; }
-          { echo "### Bank registers loaded into Wizard"; echo '```'; cat load.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          echo "::notice title=Bank registers loaded::$(grep -E '^(NZ|AU):' load.txt | tr '\n' ' ')"
+      - run: echo "::notice title=probe::dispatch reached the runner"
