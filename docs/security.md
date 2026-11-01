@@ -47,7 +47,7 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
   - the claimant's name, email and mobile;
   - bank details;
   - what they bought.
-- **Invoice photos** are in a **private** Vercel Blob store (`trevor-claim-hub-invoices`, Sydney region) in the sandbox. Production uses the S3 bucket `trevor-claim-hub` (Sydney), which the sandbox moves to once its role is set up (decisions.md #6).
+- **Invoice photos** are in the **private** S3 bucket `trevor-claim-hub` (Sydney), production under `invoices/` and the sandbox under `sandbox/invoices/` from 1 Nov 2026, each through its own role (decisions.md #6). Sandbox invoices uploaded before then stay in the private Vercel Blob store `trevor-claim-hub-invoices` (Sydney).
   - The path holds a hash of the claim link, never the link or a name.
   - Staff open a file through a 10-minute ticket. Salesforce issues it, keeping only its hash, and logs who opened it as an `Internal:` claim event.
   - **Retention is not yet automated.** Decide a period, for example 12 months after payment, and add a scheduled delete.

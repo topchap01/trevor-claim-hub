@@ -20,7 +20,7 @@ Where the claim hub is going, in order. Update it when something finishes or mov
 - [ ] Email sending domain: send claimant emails from an entryform.claims address, or keep each campaign's own sender?
 - [x] Campaign look: the hub hosts each campaign's designed page (decisions.md #10).
 - [x] AWS account for production invoice storage: bucket `trevor-claim-hub` in ap-southeast-2, for receipts off Salesforce (Mark, 1 Nov 2026; decisions.md #6).
-- [ ] Sandbox invoices in the same bucket under `sandbox/`, with their own role and a 30-day expiry (recommended), or in a separate test bucket? Decides the sandbox role in runbook, *Invoice storage on S3*.
+- [x] Sandbox invoices in the same bucket under `sandbox/`, with their own role and a 30-day expiry (Mark, 1 Nov 2026; decisions.md #6).
 - [ ] Self-serve model: who approves claims and who pays claimants in each tier (see phase 4).
 - [x] Next mechanics: prize draw first, then instant win (Mark, 31 Oct 2026; decisions.md #14).
 - [ ] Where gift with purchase sits in that order.
@@ -49,8 +49,9 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 - [ ] Invoice files on S3, not Salesforce (decisions.md #6)
   - [x] Bucket `trevor-claim-hub`, ap-southeast-2 (Mark, 1 Nov 2026)
   - [x] S3 adapter in `web/lib/files.js`, signing in through Vercel OIDC, no stored AWS keys; unit tests with a stand-in S3 (1 Nov 2026)
-  - [ ] AWS side (Mark, in the AWS console): Vercel as an identity provider, the sandbox role, bucket settings (runbook, *Invoice storage on S3*)
-  - [ ] Sandbox switched on: four environment variables on `trevor-claim-hub-test`, smoke test passes on all three demo campaigns, an invoice opens from Salesforce
+  - [x] AWS side, in the bucket's account (Future Unicorn, 838547582670): Vercel as an identity provider, role `trevor-claim-hub-sandbox`, bucket settings (Mark, 1 Nov 2026)
+  - [x] Sandbox switched on (1 Nov 2026): OIDC federation (Team issuer) and the four variables on `trevor-claim-hub-test`; smoke test passes on all three demo campaigns (run 41320864260: 24, 21 and 22 of 22 checks); a stored invoice opened from a Wizard staff link, read back from S3
+  - [ ] Tidy-up (Mark): delete the unused `trevor-claim-hub-sandbox` role and the Vercel identity provider in the management account (143150170660)
   - [ ] Production role and variables, with the production project
   - [ ] Retention lifecycle rule on `invoices/`, once the period is decided
 - [ ] Production integration user, External Client App and new key pair

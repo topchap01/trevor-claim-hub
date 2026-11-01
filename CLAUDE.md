@@ -19,7 +19,7 @@ Owner: Mark Alexander (Bamboo Marketing / Trevor Services).
 | Salesforce production | `trevor-services.my.salesforce.com` (AUS68). **Read-only.** Nothing is deployed or changed there without Mark's explicit approval. |
 | Web app (sandbox) | Vercel project `trevor-claim-hub-test` (team `team_0oBBLrjzMK25pmA9AR8j4MNs`), root directory `web`, region syd1. Campaigns at `brand.test.entryform.claims/campaign` (decisions.md #16); `trevor-claim-hub-test.vercel.app/<slug>` still works. Vercel SSO covers preview and per-deployment addresses only: the production addresses are open to anyone (checked 31 Oct 2026). Every push to `main` deploys it. |
 | Hub domain | `entryform.claims`, bought 1 Nov 2026 on Trevor's Vercel team, DNS run by Vercel. Production gets `entryform.claims` and `*.entryform.claims`; the sandbox has `test.entryform.claims` and `*.test.entryform.claims`. |
-| Invoice files | Sandbox: Vercel Blob store `trevor-claim-hub-invoices` (private, syd1), until its S3 role is set up. Production: S3 bucket `trevor-claim-hub`, ap-southeast-2, signed in through Vercel OIDC (decisions.md #6; runbook, *Invoice storage on S3*). |
+| Invoice files | S3 bucket `trevor-claim-hub`, ap-southeast-2, AWS account Future Unicorn (838547582670), signed in through Vercel OIDC, no stored keys. Sandbox under `sandbox/` (role `trevor-claim-hub-sandbox`, live 1 Nov 2026); production under `invoices/`. Older sandbox invoices stay in Vercel Blob `trevor-claim-hub-invoices`. decisions.md #6; runbook, *Invoice storage on S3*. |
 | Code | github.com/topchap01/trevor-claim-hub (private) |
 
 ## Rules that always apply

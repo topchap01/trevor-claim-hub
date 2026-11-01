@@ -60,7 +60,9 @@ Short records of the choices that shape the code, and what would change them.
   - the files are independent of the web host.
 - Vercel Blob's Hobby plan also caps storage at 1 GB and blocks access when that is exceeded.
 - All file handling is in `web/lib/files.js`, so the switch is one adapter plus environment variables. Access goes through Vercel's AWS sign-in (OIDC), so no long-lived AWS keys are stored.
-- **Bucket (Mark, 1 Nov 2026):** `trevor-claim-hub` in `ap-southeast-2` (Sydney), on Trevor's AWS account, for keeping receipts off Salesforce.
+- **Bucket (Mark, 1 Nov 2026):** `trevor-claim-hub` in `ap-southeast-2` (Sydney), for keeping receipts off Salesforce. It is in the AWS account *Future Unicorn* (838547582670), and the hub's roles live in that same account (Mark, 1 Nov 2026), not in the organisation's management account (*Trevor_Claim_Hub Management Account*, 143150170660).
+- **Sandbox shares the bucket under `sandbox/` (Mark, 1 Nov 2026),** with its own role `trevor-claim-hub-sandbox` that can only put, open and delete under `sandbox/invoices/`, and a 30-day expiry on `sandbox/`. Live on the sandbox since 1 Nov 2026; Blob stays connected only so invoices uploaded before then still open.
+- *Found while switching on (1 Nov 2026):* the role must be in the bucket's own account. A role in another account signs in but S3 refuses every save ("no resource-based policy allows"), because a bucket only lets in another account's role through a bucket policy.
 - **How the adapter works (built 1 Nov 2026):**
   - S3 takes over when `S3_BUCKET_NAME`, `S3_REGION` and `AWS_ROLE_ARN` are all set. Otherwise Blob, if its token is set; otherwise Salesforce Files, as before.
   - Salesforce keeps the same key shape as with Blob (`invoices/<hash of the claim link>/<name>`), so `ClaimHubService`'s folder check and every Apex class are unchanged.
@@ -190,7 +192,7 @@ Short records of the choices that shape the code, and what would change them.
 - Move email templates out of Apex into one standard set kept in this repository (#15). Not editable per campaign.
 - Prize draw, then instant win (#14). Instant win design so far: winning moments drawn and sealed in advance, awarded under a row lock.
 - k6 load test script.
-- Switch the S3 adapter on: the AWS sign-in role and bucket settings (runbook, *Invoice storage on S3*), then the environment variables. The adapter itself is built (#6).
+- S3 for production: the production role in the bucket's account, and the variables on the production project (#6). Live on the sandbox since 1 Nov 2026.
 - Automated invoice file retention (an S3 lifecycle rule once on S3).
 - A nightly reconcile job: Blob files no receipt points to (left behind when Salesforce timed out), and receipts whose file is missing.
 - Claim link to httpOnly cookie, so the code leaves the address bar and hosting logs. The cookie now exists (#12); what's left is the claim page reading it instead of `?token=`.

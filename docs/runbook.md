@@ -95,9 +95,10 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 730 -subj "/CN=trevor-claim-hub"
 
 **Invoice storage on S3** (decisions.md #6). The bucket is `trevor-claim-hub` in `ap-southeast-2`. The web app holds no AWS keys: Vercel gives each function a signed OIDC token, and AWS swaps it for one-hour credentials for a role that trusts only the named Vercel project and environments. Done once per environment, in the AWS console as an administrator.
 
-Values for Trevor's Vercel team:
-- team slug `mark-alexanders-projects-58606fac`;
-- sandbox project `trevor-claim-hub-test`; production project not yet created.
+Values:
+- Vercel team slug `mark-alexanders-projects-58606fac`;
+- sandbox project `trevor-claim-hub-test`; production project not yet created;
+- AWS account **Future Unicorn, `838547582670`**, which holds the bucket. Every step below is done signed in to that account. A role in any other account (the organisation's management account, for one) signs in but S3 refuses every save.
 
 1. **Bucket settings** (*S3 → trevor-claim-hub*). Check, or set:
    - *Block all public access*: on.
@@ -116,11 +117,11 @@ Values for Trevor's Vercel team:
 2. **Vercel as an identity provider** (*IAM → Identity providers → Add provider → OpenID Connect*), once for the AWS account:
    - Provider URL: `https://oidc.vercel.com/mark-alexanders-projects-58606fac`
    - Audience: `https://vercel.com/mark-alexanders-projects-58606fac`
-3. **Sandbox role** (*IAM → Roles → Create role → Custom trust policy*), named `trevor-claim-hub-sandbox`. Replace `<ACCOUNT_ID>`.
+3. **Sandbox role** (*IAM → Roles → Create role → Custom trust policy*), named `trevor-claim-hub-sandbox`. Done 1 Nov 2026.
    - Trust policy (only the sandbox project's preview and production deployments; never local development):
      ```json
      {"Version":"2012-10-17","Statement":[{"Effect":"Allow",
-       "Principal":{"Federated":"arn:aws:iam::<ACCOUNT_ID>:oidc-provider/oidc.vercel.com/mark-alexanders-projects-58606fac"},
+       "Principal":{"Federated":"arn:aws:iam::838547582670:oidc-provider/oidc.vercel.com/mark-alexanders-projects-58606fac"},
        "Action":"sts:AssumeRoleWithWebIdentity",
        "Condition":{"StringEquals":{
          "oidc.vercel.com/mark-alexanders-projects-58606fac:aud":"https://vercel.com/mark-alexanders-projects-58606fac",
@@ -136,13 +137,13 @@ Values for Trevor's Vercel team:
      ```
    - The production role, `trevor-claim-hub-production`, is the same with the production project's name and `environment:production` only in the trust policy, and `arn:aws:s3:::trevor-claim-hub/invoices/*` in the permissions.
 4. **Vercel** (*project → Settings → Security → Secure backend access with OIDC federation*): enabled, issuer mode *Team*.
-5. **Environment variables** on the project, for Production and Preview: `S3_BUCKET_NAME=trevor-claim-hub`, `S3_REGION=ap-southeast-2`, `AWS_ROLE_ARN=arn:aws:iam::<ACCOUNT_ID>:role/trevor-claim-hub-sandbox`, `S3_KEY_PREFIX=sandbox/`. None is a secret. Keep `BLOB_READ_WRITE_TOKEN` in the sandbox, so invoices uploaded before the switch still open.
+5. **Environment variables** on the project, for Production and Preview: `S3_BUCKET_NAME=trevor-claim-hub`, `S3_REGION=ap-southeast-2`, `AWS_ROLE_ARN=arn:aws:iam::838547582670:role/trevor-claim-hub-sandbox`, `S3_KEY_PREFIX=sandbox/`. None is a secret. Keep `BLOB_READ_WRITE_TOKEN` in the sandbox, so invoices uploaded before the switch still open.
 6. **Redeploy and check:**
    - `node scripts/smoke-test.mjs https://<brand>.test.entryform.claims <slug>` on each demo campaign. The invoice step must pass.
    - In Wizard, open that claim's invoice from the receipt. It should show, and its *Hub File Key* should end in a long id like `3f2a…-….jpg`.
    - In S3, the file is under `sandbox/invoices/`.
    - If invoice uploads now fail with "We couldn't save your invoice", the Vercel runtime log names the AWS error. `AccessDenied` on `AssumeRoleWithWebIdentity` means the trust policy's names don't match; on `PutObject`, the permissions policy or the prefix.
-   - To switch back, remove `AWS_ROLE_ARN` and redeploy. Uploads return to Blob; files already in S3 still need the role to open.
+   - To switch back, set `AWS_ROLE_ARN`'s environments to Development only (keeps the value) and redeploy. Uploads return to Blob; files already in S3 still need the role to open.
 
 ## Deploying
 
