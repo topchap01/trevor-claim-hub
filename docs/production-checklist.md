@@ -62,7 +62,7 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] Live campaign pages indexable by search engines. Today every page sends `noindex`. Claim-status pages (`/c`) stay noindex.
 - [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny.
 - [ ] Uptime monitor on `/api/health`.
-- [ ] Production AWS role `trevor-claim-hub-production`: trusts only the production project's `production` environment, may only put, get and delete under `trevor-claim-hub/invoices/` (runbook, *Invoice storage on S3*). OIDC federation on, Team issuer, in the production project.
+- [ ] Production AWS role `trevor-claim-hub-production`, **in the bucket's account (Future Unicorn, 838547582670)**: trusts only the production project's `production` environment, may only put, get and delete under `trevor-claim-hub/invoices/` (runbook, *Invoice storage on S3*). OIDC federation on, Team issuer, in the production project.
 - [ ] One test invoice through the production smoke test, opened from production Salesforce, then deleted.
 - [ ] Set the project's Node.js version to 22.x to match `web/package.json` and CI. The sandbox project says 26.x; `engines` in package.json takes precedence on Vercel, so builds use 22.x, but the two should agree.
 - [ ] Load test before launch: about 2,000 claims a day, with a 10× burst (k6 script, not yet written).
