@@ -91,7 +91,7 @@ public with sharing class ClaimHubConsole {
 
         return new Map<String, Object>{
             'id' => c.Id, 'name' => c.Name, 'state' => state, 'brand' => c.Hub_Brand_Name__c, 'sender' => c.Hub_Sender_Address__c,
-            'liveUrl' => c.Hub_Base_URL__c == null ? null : c.Hub_Base_URL__c.removeEnd('/') + '/' + c.Hub_Slug__c,
+            'liveUrl' => ClaimHubSettings.pageUrl(c.Hub_Base_URL__c, c.Hub_Slug__c),
             'dates' => new List<Object>{
                 dateRow('Purchases', fmtDay(c.Sales_From__c) + ' to ' + fmtDay(c.Sales_To__c)),
                 dateRow('Claims open', fmt(c.Date_start__c, tz)), dateRow('Claims close', fmt(c.Date_end__c, tz)),

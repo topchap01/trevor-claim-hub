@@ -157,7 +157,8 @@ public with sharing class ClaimHubTerms {
 
     // ------------------------------------------------------------------ build
     /**
-     * options: name, slug, start (YYYY-MM-DD), end, baseUrl, sender, brandColor, headline, termsUrl, enable (Boolean),
+     * options: name, slug, start (YYYY-MM-DD), end, brand (subdomain on the hub root domain; sets the base URL and prefixes the slug),
+     * baseUrl (only when no brand is given), sender, brandColor, headline, termsUrl, enable (Boolean),
      * accountId (optional), compareCampaignId (optional: a past campaign whose product list is checked against the terms),
      * entryRecordTypeId / productRecordTypeId (optional: only for campaigns that must also run on the old claim forms).
      * By default hub campaigns share the Claim Hub record types.
@@ -166,7 +167,16 @@ public with sharing class ClaimHubTerms {
         Date newStart = Date.valueOf(str(o, 'start')), newEnd = Date.valueOf(str(o, 'end'));
         Map<String, Object> sch = scheduleFor(spec, newStart, newEnd);
         String tz = String.valueOf(sch.get('timezone'));
-        String slug = str(o, 'slug').toLowerCase();
+        String slug = str(o, 'slug').toLowerCase().trim();
+        // Brand subdomain (decisions.md #16): the campaign is served at https://brand.root/slug-without-brand
+        String brandKey = o.get('brand') == null ? '' : String.valueOf(o.get('brand')).toLowerCase().trim();
+        String baseUrl = o.get('baseUrl') == null || String.isBlank(String.valueOf(o.get('baseUrl'))) ? null : String.valueOf(o.get('baseUrl'));
+        if (String.isNotBlank(brandKey)) {
+            if (!Pattern.matches('^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$', brandKey)) throw new TermsException('The brand web address can use lower-case letters, numbers and dashes only, up to 32 characters.');
+            if (ClaimHubSettings.rootDomain() == null) throw new TermsException('Set the hub root domain in Claim Hub Settings before building a campaign on a brand address.');
+            if (!slug.startsWith(brandKey + '-')) slug = brandKey + '-' + slug;
+            baseUrl = 'https://' + brandKey + '.' + ClaimHubSettings.rootDomain();
+        }
         if (!Pattern.matches('^[a-z0-9-]{3,60}$', slug)) throw new TermsException('The web address name can use lower-case letters, numbers and dashes only.');
         if (![SELECT Id FROM Promotional_Campaign__c WHERE Hub_Slug__c = :slug LIMIT 1].isEmpty()) throw new TermsException('Web address name ' + slug + ' is already used.');
         if (spec.get('mechanicSupported') == false) throw new TermsException('The hub cannot run this cashback mechanic yet: ' + spec.get('mechanicNote'));
@@ -217,7 +227,7 @@ public with sharing class ClaimHubTerms {
             Hub_Brand_Color__c = o.get('brandColor') == null ? '#111111' : String.valueOf(o.get('brandColor')),
             Hub_Brand_Name__c = spec.get('brand') == null ? null : String.valueOf(spec.get('brand')),
             Hub_Terms_URL__c = o.get('termsUrl') == null ? null : String.valueOf(o.get('termsUrl')),
-            Hub_Base_URL__c = o.get('baseUrl') == null ? null : String.valueOf(o.get('baseUrl')),
+            Hub_Base_URL__c = baseUrl,
             Hub_Sender_Address__c = o.get('sender') == null ? (t == null ? null : t.Campaign_Email_Address__c) : String.valueOf(o.get('sender')),
             Hub_Payment_Promise__c = spec.get('paymentPromise') == null ? null : String.valueOf(spec.get('paymentPromise')).left(255),
             Hub_Timezone__c = tz, Hub_Country__c = countryCode,

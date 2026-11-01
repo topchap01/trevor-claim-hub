@@ -22,7 +22,7 @@ export default class HubCampaignBuilder extends NavigationMixin(LightningElement
     spec;
     sched;
     templateOptions = [];
-    opts = { name: '', slug: '', start: '', end: '', compareCampaignId: '', baseUrl: 'https://trevor-claim-hub-test.vercel.app', sender: '', brandColor: '#111111', termsUrl: '', enable: true,
+    opts = { name: '', slug: '', start: '', end: '', compareCampaignId: '', brand: '', sender: '', brandColor: '#111111', termsUrl: '', enable: true,
         collectAddress: false, collectStore: false, stores: '' };
 
     @wire(templates) wiredTemplates({ data }) { if (data) this.templateOptions = data; }
@@ -30,7 +30,13 @@ export default class HubCampaignBuilder extends NavigationMixin(LightningElement
     get hasSpec() { return !!this.spec; }
     get busyText() { return this.spec ? 'Working…' : 'Claude is reading the terms. This takes up to a minute.'; }
     get cannotRead() { return this.busy || (!this.terms && !this.pdfBase64); }
-    get cannotCreate() { return this.busy || !this.sched || !this.opts.name || !this.opts.slug || this.unsupported; }
+    get cannotCreate() { return this.busy || !this.sched || !this.opts.name || !this.opts.brand || !this.opts.slug || this.unsupported; }
+    /** How the campaign's address will read, e.g. aeg.<hub domain>/nz-cashback (decisions.md #16). */
+    get addressPreview() {
+        const b = (this.opts.brand || '').toLowerCase().trim(), s = (this.opts.slug || '').toLowerCase().trim();
+        if (!b || !s) return '';
+        return `${b}.<hub domain>/${s.startsWith(b + '-') ? s.slice(b.length + 1) : s}`;
+    }
     get unsupported() { return this.spec && this.spec.mechanicSupported === false; }
 
     get facts() {
@@ -84,10 +90,10 @@ export default class HubCampaignBuilder extends NavigationMixin(LightningElement
         this.busy = true; this.error = undefined; this.spec = undefined; this.sched = undefined;
         try {
             this.spec = JSON.parse(await readTerms({ termsText: this.terms, pdfBase64: this.pdfBase64 }));
-            const brand = (this.spec.brand || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const brand = (this.spec.brand || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
             // Electrolux campaigns collect the postal address and the store, for the C4C feed (decisions.md #13)
             const electrolux = /electrolux|\baeg\b/i.test(`${this.spec.brand || ''} ${this.spec.promoter || ''}`);
-            this.opts = { ...this.opts, name: this.spec.promotionName, slug: `${brand}-cashback`, start: this.spec.purchaseStart, end: this.spec.purchaseEnd,
+            this.opts = { ...this.opts, name: this.spec.promotionName, brand, slug: 'cashback', start: this.spec.purchaseStart, end: this.spec.purchaseEnd,
                 collectAddress: electrolux, collectStore: electrolux, stores: (this.spec.retailers || []).join('\n') };
             await this.recalc();
         } catch (e) { this.error = this.msg(e); }
