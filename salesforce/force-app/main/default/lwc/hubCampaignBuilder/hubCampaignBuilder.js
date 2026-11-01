@@ -89,8 +89,8 @@ export default class HubCampaignBuilder extends NavigationMixin(LightningElement
         this.busy = true; this.error = undefined; this.spec = undefined; this.sched = undefined;
         try {
             this.spec = JSON.parse(await readTerms({ termsText: this.terms, pdfBase64: this.pdfBase64 }));
-            const brand = (this.spec.brand || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            this.opts = { ...this.opts, name: this.spec.promotionName, slug: `${brand}-cashback`, start: this.spec.purchaseStart, end: this.spec.purchaseEnd };
+            const brand = (this.spec.brand || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
+            this.opts = { ...this.opts, name: this.spec.promotionName, brand, slug: 'cashback', start: this.spec.purchaseStart, end: this.spec.purchaseEnd };
             await this.recalc();
         } catch (e) { this.error = this.msg(e); }
         this.busy = false;
