@@ -18,8 +18,11 @@ jobs:
     name: Deploy to Wizard and smoke-test
     runs-on: ubuntu-latest
     env:
-      HUB_URL: https://trevor-claim-hub-test.vercel.app
-      SMOKE_SLUGS: electrolux-cross-category electrolux-kitchen-refresh aeg-nz-cashback
+      # Each demo campaign is smoke-tested on its brand address (decisions.md #16)
+      SMOKE_TARGETS: >-
+        https://electrolux.test.entryform.claims|electrolux-cross-category
+        https://electrolux.test.entryform.claims|electrolux-kitchen-refresh
+        https://aeg.test.entryform.claims|aeg-nz-cashback
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,7 +69,8 @@ jobs:
       - name: Smoke-test the demo campaigns
         run: |
           FAILED=0
-          for SLUG in $SMOKE_SLUGS; do
+          for T in $SMOKE_TARGETS; do
+            HUB_URL="${T%%|*}"; SLUG="${T##*|}"
             set +e
             node scripts/smoke-test.mjs "$HUB_URL" "$SLUG" > "smoke-$SLUG.txt" 2>&1
             CODE=$?
