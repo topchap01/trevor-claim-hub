@@ -88,7 +88,7 @@ Brought forward on 31 October 2026, because a claimant who can't find their way 
 - [ ] Client reporting view (read-only, per client)
 - [ ] Invoice files managed by the hub (decisions.md #17; brought forward by Mark, 1 Nov 2026)
   - [x] Built: campaign label on each file, file size on the receipt, nightly check, retention by rule, *Invoice files* panel in the console
-  - [ ] Sandbox switched on: role permission for listing and labels, `CRON_SECRET`, one check run and shown in the console
+  - [x] Sandbox switched on (1 Nov 2026): role permission for listing and labels and `CRON_SECRET` (Mark); first check SC-00001 found 6 files (0.86 MB) in `sandbox/invoices/`, 0 unlinked, 0 missing, no problems, and the console panel shows it. The 6 match the six smoke-test uploads since S3 went live. The scheduled run 3 minutes after the merge, before Wizard had the new Apex, was refused by Salesforce and deleted nothing, as designed.
   - [ ] Production: the same, with the production role
 - [x] Returning claimants: "Welcome back" bar, one-tap link on a duplicate email, same-mobile flag (decisions.md #12). Merged and in Wizard; the same-mobile flag fired on every repeat smoke-test claim (31 Oct 2026).
 - [ ] Claim link moved to a secure cookie (out of the address bar and hosting logs). The cookie is in place from #12; the claim page still reads `?token=`.
