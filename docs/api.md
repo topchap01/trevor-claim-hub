@@ -73,18 +73,19 @@ All bodies are JSON. Errors are always `{"error": "<plain English, safe to show 
 
 Each check refuses with a 4xx before anything is saved.
 
-1. The promotion is open, and `acceptedTerms` is true.
+1. The promotion is open.
 2. Name, email and mobile are present and valid.
 3. No claim exists with this email on this promotion. The database enforces this too, through the unique `Hub_Dedupe_Key__c`.
 4. The connection is under its daily limit.
-5. The number of products is within the promotion's minimum and maximum.
-6. Each product belongs to the promotion.
-7. A price is given for each product where spend matters.
-8. The minimum spend is met.
-9. The serial format is valid, the serial does not start with an excluded prefix, and no serial is entered twice on the form.
-10. The basket reaches a cashback tier.
-11. The bank format is right for the country, and an NZ account number passes its bank's check digit (decisions.md #11).
-12. When the campaign asks: street number, street, suburb, a 4-digit postcode and a state or region from the list; a store from the list (or a name for `Other`), its suburb, and in Australia its state.
+5. `acceptedTerms` is true. (It comes after the email and connection checks, so a duplicate-email answer can be had without ticking the terms: audit, 1 Nov 2026.)
+6. The number of products is within the promotion's minimum and maximum.
+7. Each product belongs to the promotion.
+8. A price is given for each product where spend matters.
+9. The minimum spend is met.
+10. The serial format is valid, the serial does not start with an excluded prefix, and no serial is entered twice on the form.
+11. The basket reaches a cashback tier.
+12. The bank format is right for the country, and an NZ account number passes its bank's check digit (decisions.md #11).
+13. When the campaign asks: street number, street, suburb, a 4-digit postcode and a state or region from the list; a store from the list (or a name for `Other`), its suburb, and in Australia its state.
 
 After saving, these are flagged for the team but not refused:
 - a third or later claim from one connection in 24 hours;

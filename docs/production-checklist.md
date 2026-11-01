@@ -15,7 +15,18 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [x] **Campaign addresses.** Every campaign at `brand.entryform.claims/campaign` (Mark, 1 Nov 2026; decisions.md #16, replacing #10).
 - [ ] **Confirmation of Payee for batch payments.** Ask Trevor's paying bank whether it is offered on payment file uploads or by API, in NZ and AU (decisions.md #11).
 
+## Audit, 1 Nov 2026
+
+- [ ] Every item under *Audit fixes* in roadmap.md phase 2 is merged, tested and in Wizard (docs/audits/2026-11-01-full.md).
+
 ## Salesforce production changes
+
+- [ ] Check before deploying, not yet confirmed in this repository's metadata (audit, 1 Nov 2026):
+  - a Remote Site Setting or Named Credential for `api.anthropic.com`;
+  - the integration user, and the user who schedules the jobs, may send from each campaign's org-wide email address;
+  - Nebula Logger permissions for the integration user;
+  - the scheduled jobs run as a dedicated user, not a person.
+- [ ] Retention for `Claim_OTP__c`, `Claim_Notification__c` bodies and `Claim_Event__c` rows. Promotion-page chat events have no claim and grow without limit.
 
 - [ ] Deploy `salesforce/force-app`. This adds fields and objects, classes, LWCs, tabs, the app and permission sets. It also adds a trigger on `Entry__c` (after update), which only acts on hub campaigns.
 - [ ] Deploy `salesforce/legacy-patches/…/PromotionalCampainCreation.trigger`. This adds a null guard; without it, creating a campaign with no record type throws.
@@ -56,11 +67,12 @@ Nothing in this repository has been deployed to production. Production Salesforc
 - [ ] New Vercel project, or production environment, connected to this repository's `main` branch.
 - [ ] Environment variables: `SF_LOGIN_URL` (`https://login.salesforce.com` or the My Domain), `SF_AUDIENCE=https://login.salesforce.com`, `SF_USERNAME`, `SF_CLIENT_ID`, `SF_PRIVATE_KEY` (sensitive), and for invoices `S3_BUCKET_NAME=trevor-claim-hub`, `S3_REGION=ap-southeast-2`, `AWS_ROLE_ARN` (the production role), no `S3_KEY_PREFIX`. No Blob store and no `BLOB_READ_WRITE_TOKEN` in production.
 - [ ] Set `HUB_ENV=production` to remove the sandbox banner. Leave `HUB_HOME_SLUG` unset, so the bare domain shows nothing.
+- [ ] Remove `entryform.claims` and `www.entryform.claims` from the sandbox project first: on 1 Nov 2026 they are attached to it and serve sandbox campaigns (audit).
 - [ ] Domains `entryform.claims` and `*.entryform.claims` on the production project (both already on Trevor's Vercel team; the wildcard needs Vercel's nameservers, which the domain uses). Set `HUB_ROOT_DOMAIN=entryform.claims` (decisions.md #16).
 - [ ] `Claim_Hub_Settings__c.Hub_Root_Domain__c = entryform.claims` in production, so the builder gives campaigns their brand address.
 - [ ] Content security policy (`web/next.config.mjs`) allows each campaign's images and fonts. Today it allows only the hub's own address.
 - [ ] Live campaign pages indexable by search engines. Today every page sends `noindex`. Claim-status pages (`/c`) stay noindex.
-- [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny.
+- [ ] WAF rule: `POST /api/*`, 30 a minute per IP, deny. Also a looser rule on `GET /api/*` and campaign pages: unknown slugs and claim links each cost Salesforce API calls (audit, 1 Nov 2026).
 - [ ] Uptime monitor on `/api/health`.
 - [ ] Production AWS role `trevor-claim-hub-production`, **in the bucket's account (Future Unicorn, 838547582670)**: trusts only the production project's `production` environment, may only put, get and delete under `trevor-claim-hub/invoices/` (runbook, *Invoice storage on S3*). OIDC federation on, Team issuer, in the production project.
 - [ ] One test invoice through the production smoke test, opened from production Salesforce, then deleted.

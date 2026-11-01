@@ -8,7 +8,7 @@ flowchart LR
   V -->|JWT bearer, integration user| A[Apex REST<br/>/claimhub/v1/*]
   A --> D[(Salesforce objects<br/>Entry__c, Lead, ...)]
   A -->|callout| C[Claude API<br/>invoice, plate, chat]
-  V -->|private| B[(Vercel Blob<br/>invoice files)]
+  V -->|private| B[(Amazon S3, Sydney<br/>invoice files)]
   S[Trevor staff] -->|Lightning| L[Claim Hub app<br/>console + builder]
   L --> D
   D --> J[Scheduled Apex<br/>outbox, reminders, monitor]
@@ -104,7 +104,7 @@ The hub adds no parallel claim objects. It writes the existing ones, so reports,
 | `Lead` | The claimant: name, contact and bank details. Emails go to the Lead, so they don't use the single-email allowance. |
 | `Entry__c` | The claim. Shared record type `Claim_Hub`. Carries the same stamps as the old forms: campaign stamp, created-at fields, consumer stamps, bank stamps and terms accepted. Also `Hub_Dedupe_Key__c` (unique per campaign and email) and `Hub_Client_IP_Hash__c`. |
 | `Entry_Product__c` | One per appliance: price, serial and PNC. `Hub_Serial_Key__c` is unique, so a serial cannot be saved twice. |
-| `Entry_Receipt__c` | The invoice: OCR results, check status, `Hub_File_Key__c` (the private Blob path), `Hub_Invoice_Key__c` (retailer and invoice number, indexed) and the staff ticket hash and expiry. |
+| `Entry_Receipt__c` | The invoice: OCR results, check status, `Hub_File_Key__c` (the private S3 key; older sandbox files are in Blob, decisions.md #6), `Hub_Invoice_Key__c` (retailer and invoice number, indexed) and the staff ticket hash and expiry. |
 | `Claim_Event__c` *(new)* | Audit trail. Actions starting `Needs review:` feed the console queue. Those, and `Internal:` actions, are never shown to the claimant. |
 | `Claim_Notification__c` *(new)* | The outbox. Every email exists as a record first: Queued, then Sent, Failed, Skipped or Merged. |
 | `Claim_OTP__c` *(new)* | Bank-change codes. Only the hash is stored. They expire after 10 minutes, allow 5 attempts each, and at most 10 can be issued a day. |

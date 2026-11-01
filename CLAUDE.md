@@ -18,9 +18,9 @@ Owner: Mark Alexander (Bamboo Marketing / Trevor Services).
 | Salesforce sandbox | Wizard (`trevor-services--wizard.sandbox.my.salesforce.com`), CLI alias `wizard`. Set `SFDX_DISABLE_DNS_CHECK=true` before CLI commands. **Chats have no Wizard login: they query, run Apex and deploy through GitHub jobs. Read `.claude/skills/wizard/SKILL.md` first.** |
 | Salesforce production | `trevor-services.my.salesforce.com` (AUS68). **Read-only.** Nothing is deployed or changed there without Mark's explicit approval. |
 | Web app (sandbox) | Vercel project `trevor-claim-hub-test` (team `team_0oBBLrjzMK25pmA9AR8j4MNs`), root directory `web`, region syd1. Campaigns at `brand.test.entryform.claims/campaign` (decisions.md #16); `trevor-claim-hub-test.vercel.app/<slug>` still works. Vercel SSO covers preview and per-deployment addresses only: the production addresses are open to anyone (checked 31 Oct 2026). Every push to `main` deploys it. |
-| Hub domain | `entryform.claims`, bought 1 Nov 2026 on Trevor's Vercel team, DNS run by Vercel. Production gets `entryform.claims` and `*.entryform.claims`; the sandbox has `test.entryform.claims` and `*.test.entryform.claims`. |
+| Hub domain | `entryform.claims`, bought 1 Nov 2026 on Trevor's Vercel team, DNS run by Vercel. Production gets `entryform.claims` and `*.entryform.claims`; the sandbox has `test.entryform.claims` and `*.test.entryform.claims`. **On 1 Nov 2026 `entryform.claims` (redirecting to `www`) and `www.entryform.claims` are also on the sandbox project, and `www.entryform.claims/<slug>` serves sandbox campaigns that lodge into Wizard** (audit, 1 Nov 2026; roadmap). |
 | Invoice files | S3 bucket `trevor-claim-hub`, ap-southeast-2, AWS account Future Unicorn (838547582670), signed in through Vercel OIDC, no stored keys. Sandbox under `sandbox/` (role `trevor-claim-hub-sandbox`, live 1 Nov 2026); production under `invoices/`. Older sandbox invoices stay in Vercel Blob `trevor-claim-hub-invoices`. decisions.md #6; runbook, *Invoice storage on S3*. |
-| Code | github.com/topchap01/trevor-claim-hub (private) |
+| Code | github.com/topchap01/trevor-claim-hub. **Public** on 1 Nov 2026 (GitHub API: `visibility: public`), though this file said private. Anyone can read the code, the docs and the Wizard console results posted as check runs. Mark to decide (roadmap). |
 
 ## Rules that always apply
 

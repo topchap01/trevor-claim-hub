@@ -30,9 +30,9 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
 | One invoice on several claims | Retailer plus invoice number is indexed. A match is flagged and listed on the invoice check. |
 | One bank account on several claims | Flagged for review. |
 | Mistyped bank details | NZ numbers that fail their bank's check digit are refused on the form. Banks, branches and BSBs the registers don't list are flagged. The bank lookup route takes only the six bank-and-branch digits, never an account number, and returns public register data. |
-| Many claims from one connection | The IP address is hashed with the org Id and stored. The third claim in 24 hours is flagged. Above the daily limit (default 20) claims are refused. |
+| Many claims from one connection | The IP address is hashed with the org Id and stored. The third claim in the window is flagged. The window is `LAST_N_DAYS:1` (yesterday and today, in the running user's time zone), so 24 to 48 hours, not exactly 24. Above the daily limit (default 20) claims are refused. |
 | Claim link enumeration or a leaked link | 256-bit codes. Unknown and expired links look the same. *Email me my link* issues a new code and the old link stops working. |
-| Email enumeration | The link resend gives the same answer whether or not a claim exists, and sends at most 3 links a claim a day. |
+| Email enumeration | The link resend gives the same answer whether or not a claim exists, and sends at most 3 links a claim a day. **Gap (audit, 1 Nov 2026):** lodge answers `duplicate_email` before the terms check and with no limit, so anyone can test whether an email has a claim on a promotion. Fix is in roadmap phase 2. |
 | AI cost abuse | Per-claim daily limits on chat (40), invoice uploads (10) and plate scans (30). On the promotion page, before a claim exists, chat is limited to 20 questions per connection per day. Prompts are capped at 12 messages of 600 characters, and `max_tokens` is capped. Promotion details are cached for 60 seconds per server instance, which saves API calls. |
 | Large or hostile uploads | Photos are resized on the phone. The web app rejects bodies over 3 MB, Apex rejects base64 over 2.1 MB, and both accept only JPEG, PNG, WebP and PDF. The web app passes on only the fields each action expects, so the browser can't set a storage key. Apex also checks that the key is in that claim's folder. Staff view files under a `sandbox` CSP, so an uploaded file can never run as a page. |
 | Terms acceptance | The API refuses a claim unless `acceptedTerms` is true. It is not only a tick box in the browser. |
@@ -54,7 +54,7 @@ The PMD `ApexCRUDViolation` findings are suppressed on these classes for that re
   - Each S3 file carries one tag, its campaign slug. No personal data in names or tags.
   - **Retention** is applied by the nightly storage check once `Invoice_Retention_Months__c` is set (decisions.md #17). Not yet set: every file is kept. Files no claim points to are deleted after 7 days.
 - **Logs:**
-  - Claim link codes are redacted from web app logs.
+  - Claim link codes are redacted from web app logs. They are not redacted in Salesforce: each email's rendered body, with the claim link, is kept in `Claim_Notification__c.Body__c`, and `Claim_Hub_Admin` can read `Entry__c.Access_Token__c` (audit, 1 Nov 2026).
   - Security codes are never stored or emailed in readable form: the outbox keeps `[code not stored]`.
   - API errors return only a Nebula Logger reference.
 - **The health route** returns only ok, whether Salesforce was reachable, the response time and the number of problems. The counts stay in Salesforce.
