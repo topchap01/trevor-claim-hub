@@ -114,7 +114,7 @@ public with sharing class ClaimHubConsole {
      */
     @TestVisible
     static Map<String, Object> storage(Id campaignId, String tz) {
-        AggregateResult held = [SELECT COUNT(Id) k, SUM(Hub_File_Size__c) b, MIN(CreatedDate) first FROM Entry_Receipt__c
+        AggregateResult held = [SELECT COUNT(Id) k, SUM(Hub_File_Size__c) b, MIN(CreatedDate) earliest FROM Entry_Receipt__c
                                 WHERE Entry__r.Promotional_Campaign__c = :campaignId AND Hub_File_Key__c != null AND Hub_File_Removed__c = null WITH USER_MODE];
         Integer removed = [SELECT COUNT() FROM Entry_Receipt__c WHERE Entry__r.Promotional_Campaign__c = :campaignId AND Hub_File_Removed__c != null WITH USER_MODE];
         Integer months = ClaimHubSettings.retentionMonths();
@@ -122,7 +122,7 @@ public with sharing class ClaimHubConsole {
         List<Object> rows = new List<Object>{
             dateRow('Files held', String.valueOf(files)),
             dateRow('Space used', size((Decimal) held.get('b'))),
-            dateRow('First received', held.get('first') == null ? 'None yet' : ((Datetime) held.get('first')).format('d MMM yyyy', tz)),
+            dateRow('First received', held.get('earliest') == null ? 'None yet' : ((Datetime) held.get('earliest')).format('d MMM yyyy', tz)),
             dateRow('Kept for', months == null ? 'Every file (no retention period set)' : months + ' months after the claim is settled'),
             dateRow('Deleted under retention', String.valueOf(removed)) };
         if (months != null) {

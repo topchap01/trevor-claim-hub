@@ -65,9 +65,9 @@ public without sharing class ClaimHubStorage {
         for (Entry_Receipt__c r : candidates) entryIds.add(r.Entry__c);
         // When each claim was settled: its latest Paid or Not approved event (ClaimHubEntryHandler logs them)
         Map<Id, Datetime> settledAt = new Map<Id, Datetime>();
-        for (AggregateResult ar : [SELECT Entry__c e, MAX(CreatedDate) at FROM Claim_Event__c
+        for (AggregateResult ar : [SELECT Entry__c e, MAX(CreatedDate) settled FROM Claim_Event__c
                                    WHERE Entry__c IN :entryIds AND Action__c IN :SETTLED_ACTIONS GROUP BY Entry__c]) {
-            settledAt.put((Id) ar.get('e'), (Datetime) ar.get('at'));
+            settledAt.put((Id) ar.get('e'), (Datetime) ar.get('settled'));
         }
         List<Entry_Receipt__c> out = new List<Entry_Receipt__c>();
         for (Entry_Receipt__c r : candidates) {
